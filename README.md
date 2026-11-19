@@ -3,6 +3,8 @@
 
 > **Independent analysis using public information and synthetic data. Not affiliated with or endorsed by Varaha.**
 
+**🔗 Live app: [kilnops.streamlit.app](https://kilnops.streamlit.app)** · [COO memo (PDF)](docs/memo.pdf) · [Site launch playbook (PDF)](docs/sop_site_launch.pdf)
+
 **The problem.** A network of about 450 Kon-Tiki kilns, modelled on the publicly announced Agnisparsh project, has to deliver 100,000 tCO₂e of removals in 2027. No public number covers the parameter that matters most, kiln throughput, and execution has to work across dozens of mobile sites, hundreds of villages and more than a thousand operators. KilnOps asks what has to be true for the target to hold, which levers matter, and what operations should do in Q1 2027.
 
 ![Executive summary](docs/screenshot_home.png)
