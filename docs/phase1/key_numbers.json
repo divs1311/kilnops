@@ -1,0 +1,56 @@
+{
+  "target": 100000,
+  "base_net": 44065.418297403594,
+  "base_share_of_target": 0.4406541829740359,
+  "gross_tco2e": 69754.9162916682,
+  "rejected_tco2e": 9601.510371615928,
+  "project_emissions_tco2e": 13768.755080680061,
+  "buffer_tco2e": 2319.2325419686103,
+  "h1_share_of_net": 0.5342859302940954,
+  "monsoon_share_of_net": 0.13306116277311558,
+  "pass_rate": 0.8623536392550618,
+  "evidence_completeness": 0.84120157737,
+  "gross_per_t_biochar": 2.053352,
+  "project_em_per_t_biochar": 0.47,
+  "ch4_share_of_gross": 0.20454359505822675,
+  "ch4_share_of_gross_at_30": 0.4090871901164535,
+  "ch4_share_of_gross_at_5": 0.06818119835274226,
+  "cycle_ceiling_1_shift": 1.8181818181818181,
+  "cycle_ceiling_2_shift": 3.6363636363636362,
+  "fill_ratio_default": 0.825,
+  "fill_ratio_at_required_dry": 1.8722164270221175,
+  "required_throughput_t_dry_per_kiln_day": 5.1060448009694115,
+  "default_throughput_t_dry_per_kiln_day": 2.25,
+  "uniform_stretch": 0.4199637818998029,
+  "greedy_steps": [
+    {
+      "step": "Literature-anchored defaults",
+      "net_tco2e": 44065.418297403594,
+      "fraction_of_range_used": NaN
+    },
+    {
+      "step": "Dry biomass per batch",
+      "net_tco2e": 73442.36382900599,
+      "fraction_of_range_used": 1.0
+    },
+    {
+      "step": "Batches per kiln-day",
+      "net_tco2e": 100000.00000000001,
+      "fraction_of_range_used": 0.5424179203877648
+    }
+  ],
+  "direct_labour_inr_per_kg_char": 2.4242424242424243,
+  "net_per_t_dry": 0.28537055611915213,
+  "net_per_t_biochar": 1.2971388914506914,
+  "dry_feed_needed_t": 350421.5759324747,
+  "as_received_feed_needed_t": 427343.38528350566,
+  "biomass_spend_inr": 854686770.5670114,
+  "villages_needed": 1668.6741711070224,
+  "farmers_engaged": 250301.12566605335,
+  "effective_fleet_share": 0.8435586734693877,
+  "net_per_kiln_year_needed_full_fleet": 222.22222222222223,
+  "net_per_kiln_year_needed_with_ramp": 263.4342212477844,
+  "default_net_per_kiln_year_full": 116.08339153134386,
+  "operators": 1350.0,
+  "operator_replacements_per_year": 648.0
+}

@@ -1,0 +1,505 @@
+# =============================================================================
+# KilnOps — single source of truth for every numeric assumption.
+# Independent analysis using public information and synthetic data.
+# Not affiliated with or endorsed by Varaha.
+#
+# Scope: a 450-kiln distributed Kon-Tiki network modelled on Agnisparsh.
+# Rules:
+#   * No parameter may be hard-coded anywhere else in the repo.
+#   * Every entry: name, group, default, low, high, unit, source, status.
+#   * status ∈ {PUBLIC, LITERATURE, ASSUMPTION – VERIFY}
+#       PUBLIC     = from public reporting on the project / company
+#       LITERATURE = from peer-reviewed or standards literature (cited)
+#       ASSUMPTION – VERIFY = analyst estimate; first thing to replace with real data
+#   * low/high are plausible bounds (≈P5/P95 judgement), used for Monte Carlo
+#     (triangular) and tornado. They are NOT "pessimistic/optimistic" labels:
+#     for cost or loss parameters, "high" is the bad case.
+#   * `lever: true` marks parameters the "what has to be true" solver solves for.
+# =============================================================================
+
+meta:
+  target_net_tco2e: 100000          # PUBLIC: ">100,000 t planned for 2027" (Agnisparsh announcement, Nov 2026)
+  model_year: 2027
+  random_seed: 20270101
+  disclaimer: "Independent analysis using public information and synthetic data. Not affiliated with or endorsed by Varaha."
+
+S_SCHMIDT: &schmidt "Schmidt et al. 2016, PLOS ONE 11(5):e0154617, doi:10.1371/journal.pone.0154617"
+S_LOTZ: &lotz "Lotz & Schmidt 2026, 'Methane Emission from Artisanal Biochar Production – A White Paper', the Biochar Journal, pp 86-110"
+S_IPCC: &ipcc "IPCC 2019 Refinement, Vol 4 Ch 2 Appendix 4 (biochar), Tables 4Ap.1-4Ap.2"
+S_AGNI: &agni "Agnisparsh public announcement (Nov 13, 2026)"
+S_BANNI: &banni "Public reporting on Banni (Kutch) Kon-Tiki project: Newslaundry (Sep 2026), Mongabay (Aug 2026)"
+S_ANALYST: &analyst "Analyst estimate"
+
+parameters:
+
+  # ---------------------------------------------------------------- NETWORK
+  - name: kilns_total
+    group: network
+    default: 450
+    low: 380
+    high: 480
+    unit: kilns
+    source: *agni
+    status: PUBLIC
+    lever: true
+    note: "~450 Kon-Tiki kilns is public. Low = deployment slip; high = top-up kilns."
+
+  - name: sites_total
+    group: network
+    default: 30
+    low: 20
+    high: 45
+    unit: mobile sites
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+    note: "Public: 'multiple mobile sites in western India'. Count not disclosed."
+
+  - name: kilns_per_site
+    group: network
+    default: 15
+    low: 10
+    high: 22
+    unit: kilns/site
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+    note: "Must reconcile with kilns_total / sites_total (tested)."
+
+  - name: ramp_start_share
+    group: network
+    default: 0.45
+    low: 0.25
+    high: 0.70
+    unit: share of kilns online in Jan 2027
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+    note: "First issuance planned Jan 2027 (public) implies some kilns produced in late 2026."
+
+  - name: ramp_full_month
+    group: network
+    default: 5
+    low: 3
+    high: 9
+    unit: month index (1=Jan) at which 100% of kilns are online
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+    note: "Linear ramp from ramp_start_share in Jan. low = faster ramp (good case)."
+
+  - name: relocation_interval_days
+    group: network
+    default: 120
+    low: 60
+    high: 180
+    unit: calendar days between site moves
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+    note: "Sites move as residue within the collection radius is exhausted."
+
+  - name: relocation_downtime_days
+    group: network
+    default: 5
+    low: 2
+    high: 10
+    unit: operating days lost per move
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  # ---------------------------------------------------------- KILN PHYSICS
+  - name: kiln_volume_m3
+    group: kiln_physics
+    default: 2.0
+    low: 1.0
+    high: 3.0
+    unit: m³
+    source: "Default = 2 m³ flame-curtain kiln described in Schmidt et al. 2016 (2.4 m top diameter); range is analyst estimate"
+    status: "ASSUMPTION – VERIFY"
+    note: "Agnisparsh kiln size is not public. Used for a fill-consistency check only (implied char volume vs kiln volume)."
+
+  - name: biochar_bulk_density_t_m3
+    group: kiln_physics
+    default: 0.20
+    low: 0.15
+    high: 0.25
+    unit: t biochar / m³
+    source: "Schmidt et al. 2016 (2 m³ kiln → ~500 kg biochar dry ⇒ ≤0.25 at full fill); crop-residue char assumed lighter"
+    status: "ASSUMPTION – VERIFY"
+
+  - name: dry_biomass_per_batch_t
+    group: kiln_physics
+    default: 1.5
+    low: 0.6
+    high: 2.5
+    unit: t dry feedstock / batch
+    source: "Analyst estimate; high ≈ Schmidt 2016 2 m³ kiln (500 kg char ÷ 22% yield ≈ 2.3 t)"
+    status: "ASSUMPTION – VERIFY"
+    lever: true
+    note: "Single biggest unknown. Not public for Agnisparsh."
+
+  - name: biomass_moisture_frac
+    group: kiln_physics
+    default: 0.18
+    low: 0.10
+    high: 0.30
+    unit: fraction (wet basis, as received)
+    source: "Schmidt et al. 2016 (feedstock 15-25%); Lotz & Schmidt 2026 (≤15% ⇒ low CH4; ≥25% ⇒ up to 10x CH4)"
+    status: "ASSUMPTION – VERIFY"
+    note: "Drives procurement weight and, via CH4, net tonnes."
+
+  - name: biochar_yield_dry_frac
+    group: kiln_physics
+    default: 0.22
+    low: 0.17
+    high: 0.27
+    unit: t biochar / t dry feedstock
+    source: *schmidt
+    status: LITERATURE
+    note: "Schmidt 2016: 22 ± 5% (observed range 13-32%); low/high = ±1 SD."
+
+  - name: biochar_corg_frac
+    group: kiln_physics
+    default: 0.70
+    low: 0.55
+    high: 0.80
+    unit: t organic C / t biochar
+    source: "Schmidt et al. 2016 (75.5 ± 9%, woody; 54-55% high-ash residue mixes); IPCC 2019 Fc: wood 0.77, herbaceous 0.65"
+    status: LITERATURE
+    lever: true
+    note: "Default shaded below the woody mean for semi-woody crop stalks with higher ash."
+
+  - name: h_corg_mean
+    group: kiln_physics
+    default: 0.25
+    low: 0.22
+    high: 0.40
+    unit: molar ratio
+    source: "Schmidt et al. 2016 (H/Corg 0.22-0.28)"
+    status: LITERATURE
+    note: "High bound represents a poorly run (early-quenched / smouldering) tail."
+
+  - name: h_corg_sd
+    group: kiln_physics
+    default: 0.05
+    low: 0.03
+    high: 0.10
+    unit: molar ratio (batch-to-batch SD)
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: h_corg_max_eligible
+    group: kiln_physics
+    default: 0.70
+    low: 0.40
+    high: 0.70
+    unit: molar ratio threshold
+    source: "EBC / IBI common eligibility threshold (H/Corg < 0.7); stricter classes use 0.4"
+    status: LITERATURE
+    note: "Verify the exact threshold in Rainbow Distributed Open-Kiln v1.0."
+
+  - name: batches_per_kiln_day
+    group: kiln_physics
+    default: 1.5
+    low: 1.0
+    high: 2.5
+    unit: batches / kiln / operating day
+    source: "Analyst estimate; cycle-time check uses Schmidt 2016 ~3 h burn"
+    status: "ASSUMPTION – VERIFY"
+    lever: true
+    note: "Above ~1.8 needs a second shift (see cycle-time parameters)."
+
+  - name: burn_time_h
+    group: kiln_physics
+    default: 3.0
+    low: 2.5
+    high: 4.0
+    unit: hours / batch
+    source: "Schmidt et al. 2016 (~3 h for a 2 m³ kiln)"
+    status: LITERATURE
+
+  - name: quench_time_h
+    group: kiln_physics
+    default: 1.0
+    low: 0.5
+    high: 1.5
+    unit: hours / batch
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: handling_time_h
+    group: kiln_physics
+    default: 1.5
+    low: 1.0
+    high: 2.5
+    unit: hours / batch (prep, unload, weigh, evidence capture)
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: working_hours_per_shift
+    group: kiln_physics
+    default: 10
+    low: 8
+    high: 12
+    unit: hours
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: shifts_per_kiln_day
+    group: kiln_physics
+    default: 1
+    low: 1
+    high: 2
+    unit: crews / kiln / day
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  # -------------------------------------------------------------- CALENDAR
+  # Operating days per month at a fully staffed site. Monsoon (Jun-Sep) collapses
+  # burning; kharif residue peak Oct-Dec and rabi peak Mar-May; festival / labour
+  # dips around Holi (Mar), wedding season (May), Dussehra-Diwali (Oct-Nov).
+  - {name: op_days_jan, group: calendar, default: 23, low: 20, high: 25, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Cotton / pigeon-pea stalk clearing season."}
+  - {name: op_days_feb, group: calendar, default: 22, low: 19, high: 24, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: op_days_mar, group: calendar, default: 21, low: 17, high: 24, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Holi; rabi harvest begins."}
+  - {name: op_days_apr, group: calendar, default: 23, low: 19, high: 25, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Rabi residue peak."}
+  - {name: op_days_may, group: calendar, default: 21, low: 16, high: 24, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Heat and wedding-season labour dip."}
+  - {name: op_days_jun, group: calendar, default: 9, low: 4, high: 15, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Monsoon onset mid-June."}
+  - {name: op_days_jul, group: calendar, default: 3, low: 0, high: 8, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Monsoon: wet biomass, no open burns."}
+  - {name: op_days_aug, group: calendar, default: 3, low: 0, high: 8, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: op_days_sep, group: calendar, default: 7, low: 2, high: 14, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Monsoon withdrawal; early kharif (maize) stover."}
+  - {name: op_days_oct, group: calendar, default: 21, low: 17, high: 24, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Kharif residue peak; Dussehra."}
+  - {name: op_days_nov, group: calendar, default: 19, low: 15, high: 23, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Diwali window."}
+  - {name: op_days_dec, group: calendar, default: 24, low: 21, high: 26, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY"}
+
+  # ---------------------------------------------------- CARBON ACCOUNTING
+  - name: co2_per_c
+    group: carbon_accounting
+    default: 3.6667
+    low: 3.6667
+    high: 3.6667
+    unit: t CO2 / t C (44/12)
+    source: "Molar mass ratio"
+    status: LITERATURE
+
+  - name: persistence_factor
+    group: carbon_accounting
+    default: 0.80
+    low: 0.65
+    high: 0.89
+    unit: fraction of biochar C remaining (100-yr basis)
+    source: "IPCC 2019 Refinement Fperm: low-temp 0.65, medium 0.80, high-temp (>600 °C) 0.89"
+    status: LITERATURE
+    lever: true
+    note: "METHODOLOGY-DEPENDENT. Kon-Tiki main zone reaches 680-750 °C (Schmidt 2016), which would support 0.89; default 0.80 reflects mixed temperature histories and warm soils. Verify against Rainbow v1.0."
+
+  - name: ch4_ef_g_per_kg_biochar
+    group: carbon_accounting
+    default: 15
+    low: 5
+    high: 30
+    unit: g CH4 / kg biochar
+    source: "Schmidt et al. 2016 (30 ± 60, used as a common standard default); Lotz & Schmidt 2026 (<5 when feedstock ≤15% moisture)"
+    status: LITERATURE
+    lever: true
+    note: "Default assumes partial moisture control. Whether the methodology credits measured rather than default emission factors is the key question."
+
+  - name: ch4_gwp100
+    group: carbon_accounting
+    default: 28
+    low: 27
+    high: 29.8
+    unit: t CO2e / t CH4
+    source: "IPCC AR5 (28) / AR6 (27.0 non-fossil, 29.8 fossil)"
+    status: LITERATURE
+
+  - name: other_project_emissions_t_per_t_biochar
+    group: carbon_accounting
+    default: 0.05
+    low: 0.02
+    high: 0.10
+    unit: t CO2e / t biochar
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+    note: "Biomass and biochar transport, pumps, field vehicles, embodied kiln steel."
+
+  - name: buffer_deduction_frac
+    group: carbon_accounting
+    default: 0.05
+    low: 0.0
+    high: 0.15
+    unit: fraction of net removals withheld
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+    note: "METHODOLOGY-DEPENDENT uncertainty or buffer deduction."
+
+  # ------------------------------------------------------------------ dMRV
+  # Per-batch probability that each evidence element is captured and valid.
+  - {name: ev_photo, group: dmrv, default: 0.97, low: 0.90, high: 0.995, unit: probability, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Load, flame-curtain, quench and char photos."}
+  - {name: ev_temp_log, group: dmrv, default: 0.95, low: 0.85, high: 0.99, unit: probability, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Thermocouple / IR log; most hardware-dependent element."}
+  - {name: ev_feed_weight, group: dmrv, default: 0.97, low: 0.90, high: 0.995, unit: probability, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Isometric module requires measured feedstock mass per batch."}
+  - {name: ev_char_weight, group: dmrv, default: 0.97, low: 0.90, high: 0.995, unit: probability, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Isometric module requires measured biochar mass per batch."}
+  - {name: ev_geotag, group: dmrv, default: 0.98, low: 0.93, high: 0.998, unit: probability, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: ev_timestamp, group: dmrv, default: 0.99, low: 0.95, high: 0.999, unit: probability, source: *analyst, status: "ASSUMPTION – VERIFY"}
+
+  - name: evidence_remediation_frac
+    group: dmrv
+    default: 0.30
+    low: 0.0
+    high: 0.60
+    unit: share of incomplete batches recovered by re-submission
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: quality_rejection_frac
+    group: dmrv
+    default: 0.02
+    low: 0.005
+    high: 0.06
+    unit: share of batches failing quality (H/Corg, lab, visual char quality)
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: audit_rejection_frac
+    group: dmrv
+    default: 0.01
+    low: 0.0
+    high: 0.03
+    unit: share disallowed at verification sampling
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: lab_sample_frac
+    group: dmrv
+    default: 0.05
+    low: 0.02
+    high: 0.10
+    unit: share of batches lab-sampled
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  # ---------------------------------------------------------------- SUPPLY
+  - name: village_dry_biomass_t_per_season
+    group: supply
+    default: 300
+    low: 120
+    high: 600
+    unit: t dry surplus residue / village / season
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+    note: "Residue left after fodder and fuel use."
+
+  - name: farmer_supply_share
+    group: supply
+    default: 0.35
+    low: 0.15
+    high: 0.60
+    unit: share of available residue actually supplied
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+    note: "Sensitive to payment reliability. Phase 2 links this to payment lag."
+
+  - name: farmers_per_village
+    group: supply
+    default: 150
+    low: 80
+    high: 300
+    unit: farmers
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: harvest_seasons_per_year
+    group: supply
+    default: 2
+    low: 1
+    high: 2
+    unit: seasons (kharif, rabi)
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: collection_radius_km
+    group: supply
+    default: 10
+    low: 5
+    high: 20
+    unit: km
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: avg_haul_km
+    group: supply
+    default: 8
+    low: 4
+    high: 15
+    unit: km (village → site)
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  - name: biomass_cover_days_target
+    group: supply
+    default: 7
+    low: 3
+    high: 14
+    unit: days of feedstock on site
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+
+  # ---------------------------------------------------------------- PEOPLE
+  - {name: operators_per_kiln, group: people, default: 3, low: 2, high: 4, unit: operators / kiln / shift, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: trained_operator_availability, group: people, default: 0.90, low: 0.75, high: 0.98, unit: share of shifts with a trained lead operator, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: operator_attrition_monthly, group: people, default: 0.04, low: 0.02, high: 0.08, unit: share / month, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: training_weeks_to_full, group: people, default: 3, low: 2, high: 6, unit: weeks, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: new_operator_productivity, group: people, default: 0.60, low: 0.40, high: 0.80, unit: share of full productivity in week 1, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: new_operator_evidence_penalty, group: people, default: 0.10, low: 0.05, high: 0.20, unit: extra evidence-failure probability in first month, source: *analyst, status: "ASSUMPTION – VERIFY"}
+
+  # ----------------------------------------------------------- ECONOMICS (₹)
+  - name: biomass_price_inr_per_kg
+    group: economics
+    default: 2.0
+    low: 1.7
+    high: 2.5
+    unit: ₹ / kg raw biomass (as received)
+    source: *banni
+    status: PUBLIC
+    note: "Public anchor ₹1.7-2.2/kg paid to village committees; high allows for inflation and competition."
+
+  - {name: operator_pay_inr_per_batch, group: economics, default: 800, low: 500, high: 1200, unit: ₹ / batch (whole crew), source: *analyst, status: "ASSUMPTION – VERIFY", note: "≈3 operators at rural day-wage, 1.5 batches/day."}
+
+  - name: partner_fee_inr_per_kg_biochar
+    group: economics
+    default: 10
+    low: 8
+    high: 12
+    unit: ₹ / kg biochar
+    source: *banni
+    status: PUBLIC
+    note: "CALIBRATION ANCHOR ONLY (partner-implemented model). Compare with the direct-ops cost per kg biochar; not added to the cost stack."
+
+  - {name: water_l_per_batch, group: economics, default: 500, low: 300, high: 800, unit: L / burn, source: *banni, status: PUBLIC, note: "Public anchor ~500 L per burn."}
+  - {name: water_cost_inr_per_l, group: economics, default: 0.12, low: 0.05, high: 0.30, unit: ₹ / L (tanker), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: transport_inr_per_t_km, group: economics, default: 15, low: 8, high: 25, unit: ₹ / t-km (tractor-trolley), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kiln_capex_inr, group: economics, default: 80000, low: 40000, high: 150000, unit: ₹ / kiln, source: "Analyst estimate; Schmidt 2016 reports €30 (soil pit) to €5,000 per kiln", status: "ASSUMPTION – VERIFY"}
+  - {name: kiln_life_years, group: economics, default: 3, low: 2, high: 5, unit: years, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: site_setup_inr, group: economics, default: 300000, low: 150000, high: 600000, unit: ₹ / site, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Scales, water storage, shade, fencing, signage."}
+  - {name: relocation_cost_inr, group: economics, default: 50000, low: 20000, high: 100000, unit: ₹ / move, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: dmrv_device_inr_per_kiln, group: economics, default: 25000, low: 15000, high: 40000, unit: ₹ / kiln (phone, thermocouple, scale share), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: dmrv_platform_inr_per_year, group: economics, default: 4000000, low: 2000000, high: 8000000, unit: ₹ / year, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: lab_test_inr_per_sample, group: economics, default: 6000, low: 3000, high: 12000, unit: ₹ / sample, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: verification_inr_per_year, group: economics, default: 6000000, low: 3000000, high: 12000000, unit: ₹ / year (VVB), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: registry_fee_usd_per_t, group: economics, default: 1.0, low: 0.3, high: 2.0, unit: USD / credit issued, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: rating_fee_inr_per_year, group: economics, default: 1500000, low: 500000, high: 3000000, unit: ₹ / year, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: supervisor_inr_per_month, group: economics, default: 35000, low: 25000, high: 50000, unit: ₹ / supervisor / month (loaded), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: supervisors_per_site, group: economics, default: 1, low: 1, high: 2, unit: supervisors / site, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: program_overhead_inr_per_year, group: economics, default: 20000000, low: 10000000, high: 40000000, unit: ₹ / year (cluster managers, vehicles, training), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: biochar_return_inr_per_t, group: economics, default: 500, low: 300, high: 1000, unit: ₹ / t biochar returned, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Public: most biochar is returned free to the farmers who supplied residue."}
+  - {name: community_benefit_inr_per_net_t, group: economics, default: 250, low: 0, high: 800, unit: ₹ / net tCO2e, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Disclosed benefit-share on top of biomass payments. Treated as part of the integrity moat."}
+
+  - name: credit_price_usd
+    group: economics
+    default: 120
+    low: 90
+    high: 160
+    unit: USD / tCO2e
+    source: *banni
+    status: PUBLIC
+    note: "Public anchor: pilot credits sold at ~$120. Low/high range is an analyst estimate."
+
+  - {name: inr_per_usd, group: economics, default: 88, low: 84, high: 92, unit: ₹ / USD, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: production_to_issuance_months, group: economics, default: 3, low: 2, high: 6, unit: months, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: issuance_to_cash_months, group: economics, default: 1, low: 0, high: 3, unit: months, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: payment_sla_days, group: economics, default: 14, low: 7, high: 30, unit: days (target village payment lag), source: *analyst, status: "ASSUMPTION – VERIFY"}

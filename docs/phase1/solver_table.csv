@@ -1,0 +1,9 @@
+lever,key,kind,unit,default,required,change_pct,plausible_low,plausible_high,feasibility,check_net_at_required
+Batches per kiln-day,batches_per_kiln_day,operational,batches/kiln-day,1.5,3.404029867312941,126.9353244875294,1.0,2.5,Beyond plausible range,99999.99999999999
+Operating days per year,op_days_scale,operational,days/yr,196.0,425.4884887297456,117.08596363762531,150.0,240.0,Infeasible alone (exceeds calendar),99999.99999999993
+Dry biomass per batch,dry_biomass_per_batch_t,operational,t dry/batch,1.5,3.404029867312941,126.9353244875294,0.6,2.5,Beyond plausible range,100000.0
+dMRV pass rate,pass_rate,operational,share of batches,0.8623536392550618,1.9569850294734916,126.93532448752921,0.49917473464499995,0.9839755609191619,Infeasible alone (>100%),99999.99999999993
+Kilns at full operation,kilns_total,operational,kilns,450.0,1021.2089601938824,126.9353244875294,380.0,480.0,Beyond plausible range,100000.0
+CH4 emission factor (moisture control),ch4_ef_g_per_kg_biochar,operational,g CH4/kg char,15.0,-56.779749963563674,-478.5316664237579,5.0,30.0,Infeasible alone (<0),99999.9999999999
+Persistence factor,persistence_factor,accounting,fraction,0.8,1.5830446991961553,97.88058739951941,0.65,0.89,Infeasible alone (>1),99999.9999999998
+Biochar organic C,biochar_corg_frac,accounting,fraction,0.7,1.3851641117966373,97.88058739951964,0.55,0.8,Infeasible alone (>1),99999.99999999996
