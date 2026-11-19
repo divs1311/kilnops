@@ -65,8 +65,9 @@ def batches_per_kiln_day(batches: pd.DataFrame, by=None):
     """Formula: batches ÷ kiln-days on which the kiln ran (≥1 batch).
     Decision: compares running productivity to the plan's 1.8; a gap here is cycle time or crew skill."""
     if by:
-        g = batches.groupby(by, observed=True)
-        return g.size() / g.apply(lambda x: x[["kiln_id", "date"]].drop_duplicates().shape[0])
+        keys = [by] if isinstance(by, str) else list(by)
+        days = batches[list(dict.fromkeys(keys + ["kiln_id", "date"]))].drop_duplicates().groupby(keys, observed=True).size()
+        return batches.groupby(keys, observed=True).size() / days
     return len(batches) / batches[["kiln_id", "date"]].drop_duplicates().shape[0]
 
 
@@ -128,6 +129,14 @@ def biomass_days_of_cover(deliveries: pd.DataFrame, batches: pd.DataFrame, as_of
 
 
 # --------------------------------------------------------------------------- people KPIs
+def operator_learning_curve(batches: pd.DataFrame) -> pd.DataFrame:
+    """Network learning curve: mean batches per running day and acceptance by lead-operator tenure week (capped at 26).
+    Decision: sets how long new operators need close supervision."""
+    b = batches.assign(tenure_wk=(batches.lead_tenure_days // 7).clip(upper=26))
+    per_day = b.groupby(["operator_id", "date", "tenure_wk"]).agg(n=("batch_id", "size"), acc=("accepted", "mean")).reset_index()
+    return per_day.groupby("tenure_wk").agg(curve_bpd=("n", "mean"), curve_acc=("acc", "mean"))
+
+
 def operator_productivity_vs_cohort(batches: pd.DataFrame, operators: pd.DataFrame) -> pd.DataFrame:
     """Formula: for each lead operator, batches per running day and acceptance, compared with the network
     curve at the same tenure (weeks since training). Ratio > 1 = ahead of the learning curve.
@@ -142,7 +151,6 @@ def operator_productivity_vs_cohort(batches: pd.DataFrame, operators: pd.DataFra
     out["productivity_vs_curve"] = out.bpd / out.curve_bpd
     out["acceptance_vs_curve"] = out.acceptance / out.curve_acc
     out = out.join(operators.set_index("operator_id")[["site_id", "kiln_id", "cohort", "role"]])
-    out.attrs["curve"] = curve
     return out.reset_index()
 
 
