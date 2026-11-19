@@ -305,7 +305,7 @@ def risk_register(t: dict[str, pd.DataFrame], p: dict | None = None) -> pd.DataF
 
     rows = [
         {"risk": "dMRV rejections", "driver": "Missing temperature logs and photos; MRV-weak sites; new operators",
-         "signal": f"Acceptance {acc:.0%} vs {p['kpi_acceptance_green']:.0%} target", "tonnes_at_risk": rej_lost,
+         "signal": f"Acceptance {acc:.1%} vs {p['kpi_acceptance_green']:.0%} target", "tonnes_at_risk": rej_lost,
          "likelihood": "High", "impact": "High", "rag": rag(acc, p["kpi_acceptance_green"], p["kpi_acceptance_amber"]),
          "owner": "MRV lead", "source": "synthetic actuals"},
         {"risk": "Kiln throughput below design", "driver": "Idle kiln-days (stockouts, vacancies, relocations) and cycle time",
@@ -328,3 +328,31 @@ def risk_register(t: dict[str, pd.DataFrame], p: dict | None = None) -> pd.DataF
     df = pd.DataFrame(rows)
     df["category"] = np.where(df.source == "tonne model", "Calibration", "Delivery")
     return df.sort_values(["category", "tonnes_at_risk"], ascending=[False, False]).reset_index(drop=True)
+
+
+def payment_supply_onset(deliveries: pd.DataFrame, site: str, sla_days: float,
+                         breach_multiple: float = 2.0, drop_threshold: float = 0.75) -> dict:
+    """Formula: weekly supply ratio = site dry t ÷ average peer-site dry t (removes seasonality).
+    Payment onset = first week mean lag > breach_multiple × SLA. Supply onset = first later week where the 3-week rolling
+    supply ratio < drop_threshold × pre-breach mean (dated one week earlier, at the window centre).
+    Decision: the measured lead time between a payment backlog and a stockout (the early-warning window)."""
+    dd = deliveries.assign(week=deliveries.date.dt.to_period("W").dt.start_time)
+    site_w = dd[dd.site_id == site].groupby("week").agg(dry_t=("dry_t", "sum"), lag=("payment_lag_days", "mean"))
+    peers = dd[dd.site_id != site].groupby(["week", "site_id"]).dry_t.sum().groupby("week").mean()
+    ser = site_w.join(peers.rename("peer_dry_t"), how="right").fillna({"dry_t": 0})
+    ser["supply_ratio"] = ser.dry_t / ser.peer_dry_t
+    ser = ser[(ser.index >= "2027-01-04") & (ser.peer_dry_t > ser.peer_dry_t.quantile(0.2))]
+    out = {"series": ser, "onset_pay": None, "onset_supply": None, "gap_weeks": None, "ratio_before": None, "ratio_after": None}
+    breach = ser.index[(ser.lag > breach_multiple * sla_days).fillna(False)]
+    if not len(breach):
+        return out
+    onset_pay = breach[0]
+    baseline = ser.loc[ser.index < onset_pay, "supply_ratio"].mean()
+    roll = ser.supply_ratio.rolling(3, min_periods=2).mean()
+    drop = roll[(roll.index > onset_pay) & (roll < drop_threshold * baseline)]
+    out.update(onset_pay=onset_pay, ratio_before=float(baseline))
+    if len(drop):
+        onset_sup = drop.index[0] - pd.Timedelta(weeks=1)
+        after = ser.loc[(ser.index >= onset_sup) & (ser.index < onset_sup + pd.Timedelta(weeks=8)), "supply_ratio"].mean()
+        out.update(onset_supply=onset_sup, gap_weeks=(onset_sup - onset_pay).days / 7, ratio_after=float(after))
+    return out

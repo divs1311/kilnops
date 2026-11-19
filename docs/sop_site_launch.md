@@ -1,0 +1,205 @@
+---
+title: "Distributed Kiln Site Launch Playbook"
+subtitle: "For a 450-kiln distributed Kon-Tiki network · version 1.0 · generated from assumptions.yaml"
+date: "December 2026"
+---
+
+> **Independent analysis using public information and synthetic data. Not affiliated with or endorsed by Varaha.** This playbook is a portfolio exercise modelled on a network like the publicly announced Agnisparsh project. Thresholds come from `assumptions.yaml` and are tagged ASSUMPTION – VERIFY unless stated otherwise. Replace them with measured values as data arrives.
+
+# 1. Purpose and scope
+
+This playbook takes a mobile site of about 15 kilns from selection to steady state, and later through relocation. Done right, it delivers three outcomes:
+
+1. **Credited tonnes.** Every batch is *reject-proof* under a methodology that makes digital MRV mandatory.
+2. **A trusted supply base.** Villages are paid on time, biochar goes back to their fields, and every rupee is on a ledger.
+3. **Throughput at design.** Each kiln runs about 4.5 t dry feedstock per operating day (2.5 t × 1.8 batches).
+
+It applies to field operations, MRV, community, finance and training teams. Section 10 assigns each decision with a RACI matrix.
+
+# 2. Site selection scorecard
+
+Score each candidate site from 1 to 5 on every criterion. **Launch only if the weighted score is ≥ 3.5 and no criterion scores 1.**
+
+| Criterion | Weight | What a 5 looks like | What a 1 looks like | Evidence required |
+|---|---:|---|---|---|
+| Biomass within radius | 30% | Surplus residue ≥ 1.3× site demand within 10 km across both seasons | < 0.8× demand; one season only | Village-level residue survey; last two seasons' crop area |
+| Feedstock dryness | 10% | Covered storage possible; residue ≤ 15% moisture at harvest | Residue wet at collection; no storage | Moisture meter sample of 20 bundles |
+| Water access | 10% | Reliable source ≤ 2 km for about 500 L per burn | Tanker-only, > 10 km | Source agreement or tanker quote |
+| Road access | 10% | Tractor-trolley access all year; ≤ 30 min to all villages | Impassable for part of the year | Drive test; monsoon history |
+| Community consent | 25% | Gram panchayat resolution; ≥ 70% of target villages sign the supply MoU | Any village objects; contested land | Signed minutes, MoUs, consent register |
+| Labour and supervision | 10% | ≥ 2 candidate operators per kiln slot; supervisor within 1 hour | No local candidates | Recruitment drive sign-ups |
+| Safety and setbacks | 5% | ≥ 100 m from dwellings and stored fodder; firebreak possible | Inside a settlement | Site sketch with distances |
+
+**Red flags that override the score:** disputed land tenure, crop residue already sold under contract, or a village that has had a payment dispute with any carbon project. These need an escalation (see section 10).
+
+# 3. Community onboarding and benefit-sharing disclosure
+
+Benefit-sharing is a **commercial asset**. Buyers, rating agencies and methodology eligibility all depend on it. Run these steps in order:
+
+1. **Gram sabha meeting**, before any equipment arrives. Explain what is burned and why, what farmers receive, and what they can refuse.
+2. **Published terms**, in the local language, posted at the panchayat and on WhatsApp:
+   - biomass price (currently about ₹2.0/kg as received);
+   - payment SLA (**14 days** from delivery);
+   - biochar return (free, every 14 days);
+   - any community benefit share;
+   - a grievance contact who is **not** the site supervisor.
+3. **Supply MoU per village committee**, covering expected volumes, quality (dry, ≤ 15% moisture, no plastic or green matter), how weighing works, and how disputes are settled.
+4. **Weighing transparency.** Weigh in front of the supplier. A photo of the scale reading goes to the app and an SMS receipt goes to the committee.
+5. **Monthly ledger disclosure per village**, listing kg supplied, ₹ paid and dates, and biochar returned. This is the Farmer & Community Ledger view in the control tower.
+
+**Never:** promise carbon revenue shares that are not contracted, pay in cash without a receipt, or let a supervisor handle both payments and grievances.
+
+# 4. Operator recruitment and training curriculum
+
+Each kiln has a crew of **3 operators**, one of whom is the lead and owns evidence capture. Plan to backfill about 6% of operators per month at worst. Keep a trained reserve of 10% per site.
+
+| Week | Module | Pass criterion |
+|---|---|---|
+| 0 (2 days, classroom) | Safety (burns, smoke, water, fire control); why evidence matters; app basics | Written quiz ≥ 80%; app login and test submission |
+| 1 (shadowing) | Loading, flame-curtain control, quench timing on a buddy kiln | 3 supervised batches with complete evidence |
+| 2 (supervised lead) | Full batch as lead, buddy present; temperature log; weighing | 5 consecutive batches accepted on first submission |
+| 3 (sign-off) | Independent lead; supervisor spot checks | Acceptance on the curve for the operator's tenure |
+
+**The 14-day buddy rule.** In the synthetic data, batches led by operators in their first two weeks were accepted 76% of the time, against 85% for experienced leads. Every new lead operator is paired with an experienced lead for 14 days, and the supervisor reviews their evidence daily. It takes about 3 weeks to reach full productivity.
+
+# 5. Daily batch SOP
+
+**Pre-checks (before 08:00).**
+
+- Kiln intact, with no cracks or warping.
+- Thermocouple and IR thermometer charged and reading ambient.
+- Scale zeroed and checked against a 20 kg test weight. Log the result.
+- About 500 L of quench water on hand. PPE worn: gloves, boots, eye protection.
+- Feedstock moisture checked: sample 5 bundles. **Do not load if moisture is above 15%.** Dry it and re-test.
+
+**Loading and burn.**
+
+1. Weigh the feedstock in batches. Photo of every scale reading.
+2. Light a small fire at the base and add feedstock in thin layers, so a steady flame curtain covers the surface (no thick white smoke).
+3. Log the temperature every 15 minutes. The target peak is above 650 °C. A burn takes about 3 hours.
+
+**Quench.**
+
+- When the kiln is full and flames die back, quench with water from the top (or snuff with soil, if approved).
+- Log the quench water volume.
+- Photograph the quenched char surface.
+
+**Weighing.**
+
+- Once the char has drained, weigh all of it.
+- Take a photo of the scale with the kiln ID visible.
+
+**Evidence capture checklist** (all six required, or the batch is rejected):
+
+| # | Element | Standard |
+|---|---|---|
+| 1 | Photos | Load, flame curtain, quench, char: four photos with kiln ID in frame |
+| 2 | Temperature log | Readings every 15 minutes, with peak recorded; device ID logged |
+| 3 | Feedstock weight | Every load weighed; scale photo |
+| 4 | Biochar weight | Total char weighed after draining; scale photo |
+| 5 | Geotag | Captured automatically; must fall inside the site polygon |
+| 6 | Timestamp | Captured automatically; start and end of burn |
+
+**Submit before leaving the site.** Fix any incomplete batch the same day. Remediation after 48 hours is not allowed.
+
+# 6. Quality sampling
+
+- **Lab sampling.** 5% of batches, chosen at random by the app (not by the operator). Composite sample from three depths, sealed and labelled with the batch ID.
+- **Tests.** Organic carbon, H/C~org~ (eligibility threshold < 0.7, to be confirmed against the methodology), ash and moisture.
+- **Triggers.** If a site's H/Corg or carbon results drift for two consecutive samples, double the sampling for 2 weeks and retrain the operators involved on quench timing.
+- **Record.** Lab results are tied to batch, kiln, operator and residue type in the control tower.
+
+# 7. dMRV evidence standard: what makes a batch reject-proof
+
+A batch is reject-proof when **all six evidence elements are present, consistent and verifiable**:
+
+- Weights reconcile: yield (char ÷ dry feed) between 15% and 30%.
+- Peak temperature is above 650 °C.
+- The geotag falls inside the site polygon.
+- Timestamps fall in daylight and show a burn duration of 1.5–5 hours.
+
+In the synthetic year, the top two rejection reasons (missing temperature log, missing / unusable photos) caused 44% of rejections. Both are hardware and checklist failures, so the controls are:
+
+- a **daily device check** (thermocouple battery, phone storage, scale zero);
+- a **QA desk** that reviews every incomplete batch within 24 hours;
+- **site-level acceptance targets**: green ≥ 86%, first-pass evidence completeness ≥ 85%.
+
+# 8. Payment SLA
+
+| Payment | SLA | Method | Escalation |
+|---|---|---|---|
+| Village committee (biomass) | ≤ 14 days from delivery | Bank transfer to the committee account; SMS receipt | Any delivery unpaid at day 14 goes on the weekly breach list. A site below 75% on time goes to the finance lead the same day |
+| Operators (per batch) | Weekly, within 3 days of week end | Bank or UPI | Any delay over 3 days goes to the site lead |
+| Community benefit share (if contracted) | Within 30 days of credit sale | Committee account, published | Annual disclosure |
+
+**Why this is an operations SLA and not just a finance one.** In the synthetic data, the site with the worst payment record (55% paid on time) saw supply fall from 1.04× to 0.52× of the peer level, **4 weeks** after payments broke SLA. A payment backlog today is a feedstock stockout next month. The green standard is ≥ 90% paid within SLA at every site.
+
+# 9. Biochar return protocol
+
+1. Every 14 days, return biochar to supplying villages in proportion to the biomass each supplied in the period.
+2. Deliver to a named recipient list. Record kg, date and recipient count, with a photo at the drop point.
+3. Run a 15-minute demonstration on field application: quantity per acre, incorporating it with manure or compost, and keeping it wet during handling.
+4. Target: ≥ 85% of produced biochar returned within the period. A site below target schedules a return run before its next procurement cycle.
+5. Keep the return records with the batch records. Soil application evidence may be required by the methodology.
+
+# 10. Site relocation checklist
+
+Sites move about every 120 days, as residue within the radius runs out. Planned downtime is ≤ 5 operating days.
+
+| T-minus | Task | Owner |
+|---|---|---|
+| 21 days | Score the next site (section 2); start the consent process | Site lead + community lead |
+| 14 days | Settle all village payments at the current site; final ledger disclosure | Finance lead |
+| 10 days | Last biochar return run at the current site | Site supervisor |
+| 7 days | Water source, access and polygon set up at the new site | Site supervisor |
+| 3 days | Stop loading new feedstock; burn down stock to < 1 day of cover | Site supervisor |
+| Day 0 | Move kilns; site restored (ash and char removed, firebreak filled) | Crew |
+| Day +1 | Device checks; first supervised batch; new polygon live in the app | MRV lead |
+
+**Do not relocate with unpaid deliveries.** The old villages will be the supply base for the next season, and other villages will hear about it.
+
+# 11. Escalation matrix (RACI)
+
+R = responsible, A = accountable, C = consulted, I = informed.
+
+| Decision / issue | Site supervisor | Site lead | Head of field ops | MRV lead | Finance lead | Community lead | COO office |
+|---|---|---|---|---|---|---|---|
+| Launch a new site | C | R | A | C | C | C | I |
+| Daily batch go/no-go (moisture, safety) | R/A | I | | C | | | |
+| Batch evidence remediation | R | A | | C | | | |
+| Site acceptance below amber for 2 weeks | C | R | A | R | | | I |
+| Village payment breach > 14 days late | I | C | I | | R/A | R | I |
+| Grievance from a village | | C | I | | C | R/A | I |
+| Site relocation | R | A | C | C | C | C | I |
+| Capacity change (kilns, second shift) | | C | R | C | C | | A |
+| Methodology parameter change | | | C | R/A | I | | I |
+
+# 12. KPIs and review cadence
+
+| Forum | When | Who | KPIs reviewed | Output |
+|---|---|---|---|---|
+| **Daily huddle** | 08:00, 15 minutes, on site | Supervisor + crews | Yesterday's batches, incomplete evidence, moisture checks, days of cover (red if < 2; target 7) | Fix list for today |
+| **Weekly site review** | Monday, 45 minutes, remote | Site leads, MRV, finance, community | Net t per kiln-week, acceptance, evidence completeness, rejection Pareto, operator league vs learning curve, payment SLA and breach list, biochar return % | Actions with owners; coaching list |
+| **Monthly COO review** | First week of the month | Head of field ops, MRV lead, finance lead, COO office | Cumulative delivery vs plan (target ≥ 95%), scenario P50 vs 100k, top 3 risks with RAG, lever list by ₹/incremental t, ₹/net t vs breakeven, working capital | Lever decisions; re-baselined plan |
+
+Each KPI is defined once in `model/kpis.py`, with its formula and decision use. RAG thresholds live in `assumptions.yaml` (`kpi_thresholds`).
+
+# Annex: adapting for Sub-Saharan Africa (e.g., Côte d'Ivoire)
+
+> **All points below are hypotheses to test in a pilot, not findings.**
+
+| Dimension | India (this playbook) | Côte d'Ivoire hypothesis | What to test first |
+|---|---|---|---|
+| Feedstock | Cotton, pigeon pea, castor and mustard stalks; maize stover | Cocoa pod husk, cashew shells and apples, rice straw, cotton stalk in the north | Yield, C~org~ and ash of cocoa pod husk (high potassium and ash may cut carbon content); moisture at collection |
+| Seasons | One monsoon (Jun–Sep); kharif and rabi residue peaks | Two rainy seasons in the south (about Apr–Jul and Sep–Nov); one in the north | Re-fit the operating calendar and supply index per zone |
+| Language and training | Hindi, Gujarati, Marathi | French plus local languages (Baoulé, Dioula, Bété) | Picture-based evidence checklist; voice notes in the app |
+| Payments | Bank transfer to the village committee; UPI | **Mobile money** (Orange Money, MTN MoMo, Moov) to cooperatives or individuals | Fees, cash-out access, and whether payments go via cooperatives or straight to farmers |
+| Community structures | Gram panchayat, village committees | Cocoa cooperatives, village chiefs, land-tenure customs | Who can consent for residue on cooperative land; overlap with cocoa traceability schemes |
+| Labour | Seasonal migration; wedding-season dips | Competition with the cocoa harvest (main crop Oct–Mar) | Operator availability during the harvest; retention pay |
+| Logistics | Tractor-trolleys; dense villages | Smallholdings dispersed under tree cover; poorer feeder roads in the rains | Collection radius and haul cost per t-km; mobile vs fixed kilns |
+| Regulation and integrity | Methodology dMRV; benefit-sharing scrutiny | Child-labour and deforestation due diligence in cocoa supply chains | Integrate with cocoa traceability; safeguarding protocol |
+
+The control tower carries over unchanged (same KPIs, same RAG logic). Only `assumptions.yaml` values change: the calendar, supply index, price, payment SLA and thresholds.
+
+---
+*Independent analysis using public information and synthetic data. Not affiliated with or endorsed by Varaha.*

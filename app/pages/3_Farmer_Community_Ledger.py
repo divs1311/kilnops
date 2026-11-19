@@ -54,25 +54,8 @@ so_what(f"{worst.site_id} is the outlier: {worst.sla:.0%} of deliveries paid wit
 # ------------------------------------------------------------------ causal view
 site = st.selectbox("Site drill-down", by_site.site_id.tolist(), index=0,
                     format_func=lambda x: f"{x} · {s.set_index('site_id').district[x]} · {s.set_index('site_id').archetype[x]}")
-wk = lambda df: df.date.dt.to_period("W").dt.start_time
-dd = d.assign(week=wk(d))
-site_w = dd[dd.site_id == site].groupby("week").agg(dry_t=("dry_t", "sum"), lag=("payment_lag_days", "mean"))
-peers = dd[dd.site_id != site].groupby(["week", "site_id"]).dry_t.sum().groupby("week").mean()
-ser = site_w.join(peers.rename("peer_dry_t"), how="right").fillna({"dry_t": 0})
-ser["supply_ratio"] = ser.dry_t / ser.peer_dry_t
-ser = ser[(ser.index >= "2027-01-04") & (ser.peer_dry_t > ser.peer_dry_t.quantile(0.2))]
-
-# Onset analysis: first week payments breach 2× SLA, then first week supply falls below 75% of its pre-breach level.
-lag_on = ser.index[(ser.lag > 2 * sla).fillna(False)]
-onset_pay = lag_on[0] if len(lag_on) else None
-onset_sup, gap_wk = None, None
-if onset_pay is not None:
-    baseline = ser.loc[ser.index < onset_pay, "supply_ratio"].mean()
-    roll = ser.supply_ratio.rolling(3, min_periods=2).mean()
-    drop = roll[(roll.index > onset_pay) & (roll < 0.75 * baseline)]
-    if len(drop):
-        onset_sup = drop.index[0] - pd.Timedelta(weeks=1)  # rolling window centre ≈ one week earlier
-        gap_wk = (onset_sup - onset_pay).days / 7
+ons = kpis.payment_supply_onset(d, site, sla)
+ser, onset_pay, onset_sup, gap_wk = ons["series"], ons["onset_pay"], ons["onset_supply"], ons["gap_weeks"]
 
 l, r = st.columns([1.6, 1])
 with l:
@@ -95,9 +78,7 @@ with r:
     st.subheader("Onset gap")
     if gap_wk is not None:
         st.metric("Weeks from payment breach to supply drop", f"{gap_wk:.0f}")
-        st.metric("Supply before vs after breach",
-                  f"{ser.loc[ser.index < onset_pay, 'supply_ratio'].mean():.2f}× → "
-                  f"{ser.loc[(ser.index >= onset_sup) & (ser.index < onset_sup + pd.Timedelta(weeks=8)), 'supply_ratio'].mean():.2f}×")
+        st.metric("Supply before vs after breach", f"{ons['ratio_before']:.2f}× → {ons['ratio_after']:.2f}×")
         st.caption("Supply is measured relative to the average peer site in the same week, which removes seasonality. "
                    "A drop means at least 25% below the pre-breach level on a 3-week rolling basis.")
     else:

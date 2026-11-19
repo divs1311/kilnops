@@ -1,5 +1,7 @@
 # Phase 1 findings: assumptions and "what has to be true"
 
+> **Phase 1 snapshot (literature-default view).** Decision taken after this note: keep yaml defaults literature-anchored and add a *Plan-implied* scenario (2.5 t batches, 1.8 batches/day, dried feedstock) that the control tower tracks. Current figures for every scenario are in the README and `docs/key_numbers.json`.
+
 > Independent analysis using public information and synthetic data. Not affiliated with or endorsed by Varaha.
 
 **Scope:** a 450-kiln distributed Kon-Tiki network modelled on Agnisparsh, aiming for 100,000 tCO₂e of net removals in 2027.
