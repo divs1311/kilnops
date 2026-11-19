@@ -110,6 +110,8 @@ def scenario_mc_ranges(name: str, path: str | None = None) -> dict[str, tuple[fl
     sc = scenarios(path)
     spec = sc[name]
     out = scenario_mc_ranges(spec["base"], path) if spec.get("base") else {}
+    for k in (spec.get("overrides") or {}):
+        out.pop(k, None)  # a child's own override re-centres that parameter on yaml bounds
     for k, v in (spec.get("mc_ranges") or {}).items():
         out[k] = tuple(float(x) for x in v)
     return out

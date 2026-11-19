@@ -603,15 +603,15 @@ parameters:
   # --------------------------------------------------------- KPI THRESHOLDS (RAG)
   - {name: kpi_utilisation_green, group: kpi_thresholds, default: 0.85, low: 0.8, high: 0.9, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
   - {name: kpi_utilisation_amber, group: kpi_thresholds, default: 0.70, low: 0.6, high: 0.8, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
-  - {name: kpi_acceptance_green, group: kpi_thresholds, default: 0.90, low: 0.88, high: 0.95, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
-  - {name: kpi_acceptance_amber, group: kpi_thresholds, default: 0.82, low: 0.75, high: 0.88, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
-  - {name: kpi_evidence_green, group: kpi_thresholds, default: 0.90, low: 0.88, high: 0.95, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
-  - {name: kpi_evidence_amber, group: kpi_thresholds, default: 0.80, low: 0.75, high: 0.88, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_acceptance_green, group: kpi_thresholds, default: 0.86, low: 0.84, high: 0.92, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_acceptance_amber, group: kpi_thresholds, default: 0.80, low: 0.75, high: 0.84, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_evidence_green, group: kpi_thresholds, default: 0.85, low: 0.82, high: 0.92, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_evidence_amber, group: kpi_thresholds, default: 0.75, low: 0.70, high: 0.82, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
   - {name: kpi_cover_green, group: kpi_thresholds, default: 5, low: 4, high: 7, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY"}
   - {name: kpi_cover_amber, group: kpi_thresholds, default: 2, low: 1, high: 3, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY"}
   - {name: kpi_payment_sla_green, group: kpi_thresholds, default: 0.90, low: 0.85, high: 0.95, unit: share paid within SLA, source: *analyst, status: "ASSUMPTION – VERIFY"}
   - {name: kpi_payment_sla_amber, group: kpi_thresholds, default: 0.75, low: 0.6, high: 0.85, unit: share paid within SLA, source: *analyst, status: "ASSUMPTION – VERIFY"}
-  - {name: kpi_return_green, group: kpi_thresholds, default: 0.90, low: 0.85, high: 0.95, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_return_green, group: kpi_thresholds, default: 0.85, low: 0.80, high: 0.92, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
   - {name: kpi_return_amber, group: kpi_thresholds, default: 0.75, low: 0.6, high: 0.85, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
   - {name: kpi_vs_plan_green, group: kpi_thresholds, default: 0.95, low: 0.9, high: 1.0, unit: actual ÷ plan, source: *analyst, status: "ASSUMPTION – VERIFY"}
   - {name: kpi_vs_plan_amber, group: kpi_thresholds, default: 0.85, low: 0.75, high: 0.9, unit: actual ÷ plan, source: *analyst, status: "ASSUMPTION – VERIFY"}
@@ -685,7 +685,7 @@ scenarios:
     mc_ranges:
       dry_biomass_per_batch_t: [2.1, 2.5, 2.5]
       batches_per_kiln_day: [1.5, 1.8, 1.85]
-      ch4_ef_g_per_kg_biochar: [3, 5, 12]
+      ch4_ef_g_per_kg_biochar: [5, 5, 12]
       biomass_moisture_frac: [0.10, 0.13, 0.20]
       biomass_availability_factor: [0.85, 1.0, 1.0]   # deeper stockouts live in the biomass-shock scenario
   biomass_shock:

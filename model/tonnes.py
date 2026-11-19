@@ -502,17 +502,19 @@ def _lever_specs(p: dict) -> list[dict]:
     ]
 
 
-def lever_simulator(p: dict | None = None, target: float | None = None) -> pd.DataFrame:
+def lever_simulator(p: dict | None = None, target: float | None = None,
+                    reference_net: float | None = None) -> pd.DataFrame:
     """Incremental net tonnes and incremental ₹ cost of each lever vs `p`; ranked by ₹ per incremental tonne.
     ₹ delta = change in the full cost model (variable costs of extra batches, capex, community payments,
-    registry fees) + the lever's own fixed cost."""
+    registry fees) + the lever's own fixed cost. `reference_net` (e.g. the Monte Carlo P50) defines the gap
+    to target used for '% of gap closed'; defaults to the deterministic net."""
     from model.economics import total_cost_inr  # local import to avoid a cycle
 
     p = p or scenario_params("plan_implied")
     target = target or meta()["target_net_tco2e"]
     base_net = annual_net(p)
     base_cost = total_cost_inr(p)
-    gap = max(target - base_net, 0.0)
+    gap = max(target - (base_net if reference_net is None else reference_net), 0.0)
     rows = []
     for spec in _lever_specs(p):
         q = {**p, **spec["params"]}

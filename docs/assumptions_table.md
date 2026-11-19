@@ -241,15 +241,15 @@ Auto-generated from `assumptions.yaml` by `tools/build_assumptions_table.py`. Do
 |---|---:|---:|---:|---|---|---|---|
 | kpi_utilisation_green | 0.85 | 0.8 | 0.9 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 | kpi_utilisation_amber | 0.7 | 0.6 | 0.8 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
-| kpi_acceptance_green | 0.9 | 0.88 | 0.95 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
-| kpi_acceptance_amber | 0.82 | 0.75 | 0.88 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
-| kpi_evidence_green | 0.9 | 0.88 | 0.95 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
-| kpi_evidence_amber | 0.8 | 0.75 | 0.88 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_acceptance_green | 0.86 | 0.84 | 0.92 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_acceptance_amber | 0.8 | 0.75 | 0.84 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_evidence_green | 0.85 | 0.82 | 0.92 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_evidence_amber | 0.75 | 0.7 | 0.82 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 | kpi_cover_green | 5 | 4 | 7 | days | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 | kpi_cover_amber | 2 | 1 | 3 | days | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 | kpi_payment_sla_green | 0.9 | 0.85 | 0.95 | share paid within SLA | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 | kpi_payment_sla_amber | 0.75 | 0.6 | 0.85 | share paid within SLA | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
-| kpi_return_green | 0.9 | 0.85 | 0.95 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_return_green | 0.85 | 0.8 | 0.92 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 | kpi_return_amber | 0.75 | 0.6 | 0.85 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 | kpi_vs_plan_green | 0.95 | 0.9 | 1 | actual ÷ plan | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 | kpi_vs_plan_amber | 0.85 | 0.75 | 0.9 | actual ÷ plan | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
