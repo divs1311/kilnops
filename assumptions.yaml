@@ -21,6 +21,8 @@ meta:
   target_net_tco2e: 100000          # PUBLIC: ">100,000 t planned for 2027" (Agnisparsh announcement, Nov 2026)
   model_year: 2027
   random_seed: 20270101
+  generator_scenario: plan_implied     # design point the synthetic "actuals" are generated from
+  mc_runs: 5000
   disclaimer: "Independent analysis using public information and synthetic data. Not affiliated with or endorsed by Varaha."
 
 S_SCHMIDT: &schmidt "Schmidt et al. 2016, PLOS ONE 11(5):e0154617, doi:10.1371/journal.pone.0154617"
@@ -503,3 +505,223 @@ parameters:
   - {name: production_to_issuance_months, group: economics, default: 3, low: 2, high: 6, unit: months, source: *analyst, status: "ASSUMPTION – VERIFY"}
   - {name: issuance_to_cash_months, group: economics, default: 1, low: 0, high: 3, unit: months, source: *analyst, status: "ASSUMPTION – VERIFY"}
   - {name: payment_sla_days, group: economics, default: 14, low: 7, high: 30, unit: days (target village payment lag), source: *analyst, status: "ASSUMPTION – VERIFY"}
+
+  # --------------------------------------------------- ADDED IN PHASE 2/3
+  - name: biomass_availability_factor
+    group: network
+    default: 1.0
+    low: 0.7
+    high: 1.0
+    unit: share of planned kiln-days with feedstock on hand
+    source: *analyst
+    status: "ASSUMPTION – VERIFY"
+    note: "1.0 = no stockouts. Used in the biomass-shock scenario."
+
+  # CH4 as a function of feedstock moisture (used by the synthetic-data generator per batch)
+  - {name: ch4_ef_dry_g_per_kg, group: carbon_accounting, default: 5, low: 2, high: 8, unit: g CH4/kg biochar at moisture ≤ dry threshold, source: *lotz, status: LITERATURE, note: "Lotz & Schmidt 2026: <5 g/kg at ≤15% moisture."}
+  - {name: ch4_ef_wet_g_per_kg, group: carbon_accounting, default: 30, low: 20, high: 50, unit: g CH4/kg biochar at moisture ≥ wet threshold, source: "Lotz & Schmidt 2026 (up to 10x at ≥25% moisture); Schmidt 2016 mean 30", status: LITERATURE}
+  - {name: moisture_dry_threshold, group: carbon_accounting, default: 0.15, low: 0.12, high: 0.18, unit: fraction, source: *lotz, status: LITERATURE}
+  - {name: moisture_wet_threshold, group: carbon_accounting, default: 0.25, low: 0.22, high: 0.30, unit: fraction, source: *lotz, status: LITERATURE}
+
+  # ------------------------------------------------- SYNTHETIC DATA DESIGN
+  # Site archetypes. Counts must sum to sites_total (tested).
+  - {name: arch_strong_sites, group: synthetic_data, default: 8, low: 8, high: 8, unit: sites, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_average_sites, group: synthetic_data, default: 12, low: 12, high: 12, unit: sites, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_biomass_sites, group: synthetic_data, default: 5, low: 5, high: 5, unit: sites, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_mrvweak_sites, group: synthetic_data, default: 5, low: 5, high: 5, unit: sites, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_strong_supply_ratio, group: synthetic_data, default: 1.35, low: 1.2, high: 1.5, unit: supply capacity ÷ full demand, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_average_supply_ratio, group: synthetic_data, default: 1.15, low: 1.0, high: 1.3, unit: supply capacity ÷ full demand, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_biomass_supply_ratio, group: synthetic_data, default: 0.72, low: 0.6, high: 0.85, unit: supply capacity ÷ full demand, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_mrvweak_supply_ratio, group: synthetic_data, default: 1.15, low: 1.0, high: 1.3, unit: supply capacity ÷ full demand, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_strong_evidence_fail_mult, group: synthetic_data, default: 0.6, low: 0.4, high: 0.8, unit: × per-element failure probability, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_average_evidence_fail_mult, group: synthetic_data, default: 1.0, low: 1.0, high: 1.0, unit: × per-element failure probability, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_biomass_evidence_fail_mult, group: synthetic_data, default: 1.0, low: 0.8, high: 1.2, unit: × per-element failure probability, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_mrvweak_evidence_fail_mult, group: synthetic_data, default: 2.6, low: 2.0, high: 3.5, unit: × per-element failure probability, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_strong_productivity, group: synthetic_data, default: 1.0, low: 0.95, high: 1.05, unit: × batches per kiln-day, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_average_productivity, group: synthetic_data, default: 0.94, low: 0.9, high: 1.0, unit: × batches per kiln-day, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_biomass_productivity, group: synthetic_data, default: 0.92, low: 0.85, high: 1.0, unit: × batches per kiln-day, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_mrvweak_productivity, group: synthetic_data, default: 0.9, low: 0.85, high: 1.0, unit: × batches per kiln-day, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_strong_moisture, group: synthetic_data, default: 0.12, low: 0.10, high: 0.14, unit: mean feedstock moisture, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_average_moisture, group: synthetic_data, default: 0.14, low: 0.12, high: 0.16, unit: mean feedstock moisture, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_biomass_moisture, group: synthetic_data, default: 0.17, low: 0.14, high: 0.20, unit: mean feedstock moisture, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_mrvweak_moisture, group: synthetic_data, default: 0.15, low: 0.12, high: 0.18, unit: mean feedstock moisture, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_strong_return_completion, group: synthetic_data, default: 0.95, low: 0.9, high: 1.0, unit: share of biochar returned, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_average_return_completion, group: synthetic_data, default: 0.86, low: 0.8, high: 0.92, unit: share of biochar returned, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_biomass_return_completion, group: synthetic_data, default: 0.78, low: 0.7, high: 0.85, unit: share of biochar returned, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: arch_mrvweak_return_completion, group: synthetic_data, default: 0.80, low: 0.7, high: 0.9, unit: share of biochar returned, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  # Late-payer causal story (one average site)
+  - {name: late_payer_start_day, group: synthetic_data, default: 60, low: 45, high: 120, unit: day of 2027 when payments start running late, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: late_payer_lag_days, group: synthetic_data, default: 48, low: 30, high: 60, unit: days mean payment lag once late, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: late_payer_end_day, group: synthetic_data, default: 200, low: 160, high: 240, unit: day of 2027 when the payment backlog is cleared, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: normal_payment_lag_days, group: synthetic_data, default: 9, low: 5, high: 14, unit: days mean payment lag, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: trust_window_start_days, group: synthetic_data, default: 42, low: 35, high: 49, unit: days before today (window start), source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY", note: "Villages react to payment lag on deliveries made 4-6 weeks earlier."}
+  - {name: trust_window_end_days, group: synthetic_data, default: 28, low: 21, high: 35, unit: days before today (window end), source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: trust_sensitivity, group: synthetic_data, default: 0.55, low: 0.3, high: 1.0, unit: supply drop per SLA-multiple of excess lag, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: trust_floor, group: synthetic_data, default: 0.40, low: 0.3, high: 0.6, unit: minimum supply willingness, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  - {name: trust_recovery_per_day, group: synthetic_data, default: 0.006, low: 0.003, high: 0.02, unit: willingness regained per day once paid on time, source: "Synthetic-data design choice", status: "ASSUMPTION – VERIFY"}
+  # Seasonal biomass supply index (1.0 = average)
+  - {name: supply_index_jan, group: synthetic_data, default: 1.10, low: 0.9, high: 1.3, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Cotton / pigeon-pea stalk clearing."}
+  - {name: supply_index_feb, group: synthetic_data, default: 1.05, low: 0.9, high: 1.2, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: supply_index_mar, group: synthetic_data, default: 1.20, low: 1.0, high: 1.4, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: supply_index_apr, group: synthetic_data, default: 1.30, low: 1.1, high: 1.5, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Rabi peak."}
+  - {name: supply_index_may, group: synthetic_data, default: 1.05, low: 0.8, high: 1.2, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: supply_index_jun, group: synthetic_data, default: 0.50, low: 0.3, high: 0.7, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: supply_index_jul, group: synthetic_data, default: 0.20, low: 0.1, high: 0.4, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: supply_index_aug, group: synthetic_data, default: 0.20, low: 0.1, high: 0.4, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: supply_index_sep, group: synthetic_data, default: 0.50, low: 0.3, high: 0.8, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: supply_index_oct, group: synthetic_data, default: 1.30, low: 1.1, high: 1.5, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Kharif peak."}
+  - {name: supply_index_nov, group: synthetic_data, default: 1.30, low: 1.1, high: 1.5, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: supply_index_dec, group: synthetic_data, default: 1.20, low: 1.0, high: 1.4, unit: index, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  # Batch-level noise
+  - {name: dry_batch_cv, group: synthetic_data, default: 0.10, low: 0.05, high: 0.2, unit: coefficient of variation, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: yield_sd, group: synthetic_data, default: 0.03, low: 0.02, high: 0.05, unit: absolute SD of yield, source: "Schmidt et al. 2016 (±5% across feedstocks; within-feedstock assumed narrower)", status: "ASSUMPTION – VERIFY"}
+  - {name: peak_temp_mean_c, group: synthetic_data, default: 700, low: 650, high: 750, unit: °C, source: "Schmidt et al. 2016 (680-750 °C main zone)", status: LITERATURE}
+  - {name: peak_temp_sd_c, group: synthetic_data, default: 35, low: 20, high: 60, unit: °C, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: new_operator_temp_penalty_c, group: synthetic_data, default: 45, low: 20, high: 80, unit: °C lower peak temp in first month, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: operator_vacancy_days, group: synthetic_data, default: 6, low: 2, high: 14, unit: days to backfill a leaver, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: biochar_return_interval_days, group: synthetic_data, default: 14, low: 7, high: 30, unit: days between return runs, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: operator_pay_interval_days, group: synthetic_data, default: 7, low: 7, high: 14, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: villages_per_location, group: synthetic_data, default: 11, low: 6, high: 20, unit: villages within radius per site location, source: *analyst, status: "ASSUMPTION – VERIFY"}
+
+  # ------------------------------------------------------------- LEVERS (₹ cost of closing the gap)
+  - {name: lever_dmrv_step_pp, group: levers, default: 5, low: 2, high: 8, unit: pp pass-rate gain, source: *analyst, status: "ASSUMPTION – VERIFY", note: "QA review desk, thermocouple upgrade, evidence refresher training."}
+  - {name: lever_dmrv_cost_inr, group: levers, default: 6000000, low: 3000000, high: 12000000, unit: ₹ / year, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: lever_kilns_added, group: levers, default: 45, low: 15, high: 90, unit: kilns (3 sites), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: lever_kilns_from_month, group: levers, default: 4, low: 3, high: 7, unit: month index online, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: lever_extra_op_days_per_month, group: levers, default: 2, low: 1, high: 3, unit: extra days in non-monsoon months, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Covered feedstock storage + relief crews."}
+  - {name: lever_op_days_cost_inr_per_site, group: levers, default: 150000, low: 80000, high: 300000, unit: ₹ / site / year fixed, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: lever_drying_cost_inr_per_site, group: levers, default: 100000, low: 50000, high: 200000, unit: ₹ / site (drying yard, tarps, moisture meter), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: lever_drying_cost_inr_per_t_dry, group: levers, default: 150, low: 80, high: 300, unit: ₹ / t dry handled, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: lever_second_shift_share, group: levers, default: 0.25, low: 0.1, high: 0.5, unit: share of kilns on 2 shifts, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: lever_second_shift_uplift, group: levers, default: 0.6, low: 0.4, high: 0.9, unit: extra batches/day ÷ single-shift batches/day, source: *analyst, status: "ASSUMPTION – VERIFY", note: "Below 1.0: night burns are slower and some days lack feedstock."}
+  - {name: lever_second_shift_fixed_inr_per_kiln, group: levers, default: 60000, low: 30000, high: 120000, unit: ₹ / kiln / year (lighting, night supervision), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: lever_ramp_months_saved, group: levers, default: 2, low: 1, high: 3, unit: months earlier to full fleet, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: lever_ramp_cost_inr, group: levers, default: 4000000, low: 2000000, high: 8000000, unit: ₹ (pre-hiring, operator academy), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: dmrv_device_life_years, group: economics, default: 2, low: 1, high: 3, unit: years, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: site_asset_life_years, group: economics, default: 3, low: 2, high: 5, unit: years, source: *analyst, status: "ASSUMPTION – VERIFY"}
+
+  # --------------------------------------------------------- KPI THRESHOLDS (RAG)
+  - {name: kpi_utilisation_green, group: kpi_thresholds, default: 0.85, low: 0.8, high: 0.9, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_utilisation_amber, group: kpi_thresholds, default: 0.70, low: 0.6, high: 0.8, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_acceptance_green, group: kpi_thresholds, default: 0.90, low: 0.88, high: 0.95, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_acceptance_amber, group: kpi_thresholds, default: 0.82, low: 0.75, high: 0.88, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_evidence_green, group: kpi_thresholds, default: 0.90, low: 0.88, high: 0.95, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_evidence_amber, group: kpi_thresholds, default: 0.80, low: 0.75, high: 0.88, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_cover_green, group: kpi_thresholds, default: 5, low: 4, high: 7, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_cover_amber, group: kpi_thresholds, default: 2, low: 1, high: 3, unit: days, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_payment_sla_green, group: kpi_thresholds, default: 0.90, low: 0.85, high: 0.95, unit: share paid within SLA, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_payment_sla_amber, group: kpi_thresholds, default: 0.75, low: 0.6, high: 0.85, unit: share paid within SLA, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_return_green, group: kpi_thresholds, default: 0.90, low: 0.85, high: 0.95, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_return_amber, group: kpi_thresholds, default: 0.75, low: 0.6, high: 0.85, unit: share, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_vs_plan_green, group: kpi_thresholds, default: 0.95, low: 0.9, high: 1.0, unit: actual ÷ plan, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_vs_plan_amber, group: kpi_thresholds, default: 0.85, low: 0.75, high: 0.9, unit: actual ÷ plan, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_attrition_green, group: kpi_thresholds, default: 0.04, low: 0.03, high: 0.05, unit: monthly share (≤ green), source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: kpi_attrition_amber, group: kpi_thresholds, default: 0.06, low: 0.05, high: 0.08, unit: monthly share (≤ amber), source: *analyst, status: "ASSUMPTION – VERIFY"}
+
+  # ------------------------------------------------------ PATHWAY BENCHMARK
+  # Scores are 1-5, higher = better for the developer. Qualitative; see notes.
+  - {name: pw_cost_usd_low_distributed, group: pathway, default: 50, low: 50, high: 50, unit: USD/t, source: "Analyst range; cross-check with this model's ₹/t", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cost_usd_high_distributed, group: pathway, default: 120, low: 120, high: 120, unit: USD/t, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cost_usd_low_industrial, group: pathway, default: 90, low: 90, high: 90, unit: USD/t, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cost_usd_high_industrial, group: pathway, default: 180, low: 180, high: 180, unit: USD/t, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cost_usd_low_regenag, group: pathway, default: 15, low: 15, high: 15, unit: USD/t, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cost_usd_high_regenag, group: pathway, default: 45, low: 45, high: 45, unit: USD/t, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cost_usd_low_erw, group: pathway, default: 120, low: 120, high: 120, unit: USD/t, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cost_usd_high_erw, group: pathway, default: 300, low: 300, high: 300, unit: USD/t, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_permanence_distributed, group: pathway, default: 4, low: 3, high: 4, unit: score, source: "Persistence factor 0.65-0.89 (IPCC 2019)", status: LITERATURE}
+  - {name: pw_permanence_industrial, group: pathway, default: 4, low: 4, high: 5, unit: score, source: "Controlled high-temperature pyrolysis", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_permanence_regenag, group: pathway, default: 2, low: 1, high: 2, unit: score, source: "Soil carbon is reversible", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_permanence_erw, group: pathway, default: 5, low: 4, high: 5, unit: score, source: "Geologic carbonate / bicarbonate storage", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_time_to_cash_distributed, group: pathway, default: 5, low: 4, high: 5, unit: score, source: "Per-batch dMRV, months from burn to issuance", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_time_to_cash_industrial, group: pathway, default: 3, low: 2, high: 3, unit: score, source: "Plant build 12-24 months first", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_time_to_cash_regenag, group: pathway, default: 2, low: 1, high: 2, unit: score, source: "Multi-year sampling / modelling cycles", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_time_to_cash_erw, group: pathway, default: 1, low: 1, high: 2, unit: score, source: "Slow weathering, measurement lag", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_delivery_risk_distributed, group: pathway, default: 3, low: 2, high: 3, unit: score (5 = low risk), source: "Biomass, labour, evidence across many sites", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_delivery_risk_industrial, group: pathway, default: 3, low: 2, high: 4, unit: score (5 = low risk), source: "Commissioning, uptime, feedstock contracts", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_delivery_risk_regenag, group: pathway, default: 3, low: 2, high: 3, unit: score (5 = low risk), source: "Practice adoption, reversal", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_delivery_risk_erw, group: pathway, default: 2, low: 1, high: 3, unit: score (5 = low risk), source: "Measurement uncertainty, rock logistics", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_mrv_simplicity_distributed, group: pathway, default: 2, low: 2, high: 3, unit: score (5 = simplest), source: "dMRV on every batch, 450 units", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_mrv_simplicity_industrial, group: pathway, default: 4, low: 4, high: 5, unit: score (5 = simplest), source: "Metered, few units", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_mrv_simplicity_regenag, group: pathway, default: 2, low: 1, high: 2, unit: score (5 = simplest), source: "Soil sampling + models", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_mrv_simplicity_erw, group: pathway, default: 1, low: 1, high: 2, unit: score (5 = simplest), source: "Field geochemistry", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cobenefits_distributed, group: pathway, default: 5, low: 4, high: 5, unit: score, source: "Avoided residue burning, farmer income, biochar returned free", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cobenefits_industrial, group: pathway, default: 3, low: 3, high: 4, unit: score, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cobenefits_regenag, group: pathway, default: 4, low: 4, high: 5, unit: score, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_cobenefits_erw, group: pathway, default: 3, low: 3, high: 4, unit: score, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_scalability_distributed, group: pathway, default: 3, low: 2, high: 4, unit: score, source: "Labour, biomass logistics, supervision span", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_scalability_industrial, group: pathway, default: 3, low: 2, high: 4, unit: score, source: "Capex, permitting", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_scalability_regenag, group: pathway, default: 5, low: 4, high: 5, unit: score, source: "Acreage-driven", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_scalability_erw, group: pathway, default: 4, low: 3, high: 4, unit: score, source: "Rock supply, spreading logistics", status: "ASSUMPTION – VERIFY"}
+  - {name: pw_weight_cost, group: pathway, default: 0.25, low: 0, high: 1, unit: weight, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_weight_permanence, group: pathway, default: 0.20, low: 0, high: 1, unit: weight, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_weight_time_to_cash, group: pathway, default: 0.15, low: 0, high: 1, unit: weight, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_weight_delivery_risk, group: pathway, default: 0.15, low: 0, high: 1, unit: weight, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_weight_mrv_simplicity, group: pathway, default: 0.10, low: 0, high: 1, unit: weight, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_weight_cobenefits, group: pathway, default: 0.10, low: 0, high: 1, unit: weight, source: *analyst, status: "ASSUMPTION – VERIFY"}
+  - {name: pw_weight_scalability, group: pathway, default: 0.05, low: 0, high: 1, unit: weight, source: *analyst, status: "ASSUMPTION – VERIFY"}
+
+# =============================================================================
+# SCENARIOS — each is a named set of overrides on the parameter defaults.
+# `base` chains scenarios (overrides applied on top of the base scenario).
+# `mc_ranges` [low, mode, high] replace yaml bounds for Monte Carlo in that
+# scenario only (execution uncertainty conditional on the scenario's design).
+# =============================================================================
+scenarios:
+  literature:
+    label: "Literature defaults"
+    description: "Every parameter at its assumptions.yaml default. The calibration-risk view."
+    base: null
+    overrides: {}
+  plan_implied:
+    label: "Plan-implied (Base)"
+    description: "The design point that delivers ~100k t: 2.5 t dry batches in ~3 m³ kilns, 1.8 batches/day (single-shift ceiling), feedstock dried to ≤15% moisture. The plan the control tower tracks."
+    base: null
+    overrides:
+      dry_biomass_per_batch_t: 2.5
+      kiln_volume_m3: 3.0
+      batches_per_kiln_day: 1.8
+      biomass_moisture_frac: 0.13
+      ch4_ef_g_per_kg_biochar: 5
+    mc_ranges:
+      dry_biomass_per_batch_t: [2.1, 2.5, 2.5]
+      batches_per_kiln_day: [1.5, 1.8, 1.85]
+      ch4_ef_g_per_kg_biochar: [3, 5, 12]
+      biomass_moisture_frac: [0.10, 0.13, 0.20]
+      biomass_availability_factor: [0.85, 1.0, 1.0]   # deeper stockouts live in the biomass-shock scenario
+  biomass_shock:
+    label: "Biomass shock"
+    description: "Plan-implied, but a weak residue season: 15% of kiln-days without feedstock and wetter residue (CH4 up)."
+    base: plan_implied
+    overrides:
+      biomass_availability_factor: 0.85
+      biomass_moisture_frac: 0.20
+      ch4_ef_g_per_kg_biochar: 12
+  mrv_slippage:
+    label: "MRV slippage"
+    description: "Plan-implied, but evidence capture degrades (temperature logs and weights) and remediation is slow."
+    base: plan_implied
+    overrides:
+      ev_temp_log: 0.88
+      ev_photo: 0.93
+      ev_feed_weight: 0.93
+      ev_char_weight: 0.93
+      evidence_remediation_frac: 0.10
+      quality_rejection_frac: 0.04
+  slow_ramp:
+    label: "Slow ramp"
+    description: "Plan-implied, but only 25% of kilns online in January and full fleet only by September."
+    base: plan_implied
+    overrides:
+      ramp_start_share: 0.25
+      ramp_full_month: 9
+  upside:
+    label: "Upside"
+    description: "Plan-implied plus methodology credits high-temperature persistence (0.89), faster remediation and a fuller calendar."
+    base: plan_implied
+    overrides:
+      persistence_factor: 0.89
+      evidence_remediation_frac: 0.50
+      ramp_full_month: 4
+      op_days_jun: 12
+      op_days_sep: 10
+      op_days_nov: 21

@@ -88,3 +88,28 @@ def with_overrides(base: dict[str, float] | None = None, **overrides: float) -> 
 
 def monthly_op_days(p: dict[str, float]) -> list[float]:
     return [p[f"op_days_{m}"] for m in MONTHS]
+
+
+# --------------------------------------------------------------------------- scenarios
+def scenarios(path: str | None = None) -> dict[str, dict]:
+    return dict(load_raw(path).get("scenarios", {}))
+
+
+def scenario_params(name: str = "literature", path: str | None = None) -> dict[str, float]:
+    """Defaults with the scenario's overrides applied (base scenarios first)."""
+    sc = scenarios(path)
+    if name not in sc:
+        raise KeyError(f"unknown scenario {name}")
+    spec = sc[name]
+    params = scenario_params(spec["base"], path) if spec.get("base") else defaults(path)
+    return with_overrides(params, **(spec.get("overrides") or {}))
+
+
+def scenario_mc_ranges(name: str, path: str | None = None) -> dict[str, tuple[float, float, float]]:
+    """[low, mode, high] Monte Carlo overrides for a scenario, inherited along the base chain."""
+    sc = scenarios(path)
+    spec = sc[name]
+    out = scenario_mc_ranges(spec["base"], path) if spec.get("base") else {}
+    for k, v in (spec.get("mc_ranges") or {}).items():
+        out[k] = tuple(float(x) for x in v)
+    return out

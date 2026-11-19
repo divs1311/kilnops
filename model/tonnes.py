@@ -21,58 +21,75 @@ Every term is affine in each solver lever, so the solver is exact and closed-for
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import brentq
 
-from model.assumptions import MONTHS, defaults, load_params, meta, monthly_op_days
+from model.assumptions import (MONTHS, defaults, load_params, meta, monthly_op_days, scenario_mc_ranges,
+                               scenario_params, scenarios)
 
 CAL_DAYS_2027 = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 EV_ELEMENTS = ("ev_photo", "ev_temp_log", "ev_feed_weight", "ev_char_weight", "ev_geotag", "ev_timestamp")
 
 
 # --------------------------------------------------------------------------- unit factors
-def evidence_completeness(p: dict) -> float:
+# All functions below accept scalars or numpy arrays (Monte Carlo) for every parameter.
+def _a(p: dict, k: str) -> np.ndarray:
+    return np.asarray(p[k], dtype=float)
+
+
+def evidence_completeness(p: dict):
     """P(all six evidence elements valid) assuming independence."""
-    return float(np.prod([p[e] for e in EV_ELEMENTS]))
+    out = 1.0
+    for e in EV_ELEMENTS:
+        out = out * _a(p, e)
+    return out
 
 
-def dmrv_pass_rate(p: dict) -> float:
+def dmrv_pass_rate(p: dict):
     """Share of produced batches that end up credited.
 
     pass = [c + (1 − c)·r] · (1 − quality_rej) · (1 − audit_rej)
     c = evidence completeness, r = remediation share of incomplete batches.
     """
     c = evidence_completeness(p)
-    effective = c + (1 - c) * p["evidence_remediation_frac"]
-    return effective * (1 - p["quality_rejection_frac"]) * (1 - p["audit_rejection_frac"])
+    effective = c + (1 - c) * _a(p, "evidence_remediation_frac")
+    return effective * (1 - _a(p, "quality_rejection_frac")) * (1 - _a(p, "audit_rejection_frac"))
 
 
-def gross_t_per_t_biochar(p: dict) -> float:
-    return p["biochar_corg_frac"] * p["co2_per_c"] * p["persistence_factor"]
+def gross_t_per_t_biochar(p: dict):
+    return _a(p, "biochar_corg_frac") * _a(p, "co2_per_c") * _a(p, "persistence_factor")
 
 
-def project_em_t_per_t_biochar(p: dict) -> float:
-    return p["ch4_ef_g_per_kg_biochar"] / 1000.0 * p["ch4_gwp100"] + p["other_project_emissions_t_per_t_biochar"]
+def project_em_t_per_t_biochar(p: dict):
+    return _a(p, "ch4_ef_g_per_kg_biochar") / 1000.0 * _a(p, "ch4_gwp100") + _a(p, "other_project_emissions_t_per_t_biochar")
+
+
+def _col(p: dict, k: str) -> np.ndarray:
+    """Parameter as a column vector (…, 1) so it broadcasts against the 12-month axis."""
+    return _a(p, k)[..., None]
+
+
+def _days(p: dict) -> np.ndarray:
+    return np.stack([_a(p, f"op_days_{m}") for m in MONTHS], axis=-1)
 
 
 def ramp_shares(p: dict) -> np.ndarray:
     """Share of kilns online per month: linear from ramp_start_share (Jan) to 1.0 at ramp_full_month."""
-    start, full = p["ramp_start_share"], p["ramp_full_month"]
+    start, full = _col(p, "ramp_start_share"), _col(p, "ramp_full_month")
     months = np.arange(1, 13)
-    if full <= 1:
-        return np.ones(12)
-    share = start + (1 - start) * (months - 1) / (full - 1)
+    share = start + (1 - start) * (months - 1) / np.maximum(full - 1, 1e-9)
+    share = np.where(full <= 1, 1.0, share)
     return np.clip(share, 0, 1)
 
 
 def relocation_loss_days(p: dict) -> np.ndarray:
     """Operating days lost per kiln per month to site moves, spread pro rata over operating days."""
-    moves_per_year = 365.0 / p["relocation_interval_days"]
-    lost = moves_per_year * p["relocation_downtime_days"]
-    days = np.array(monthly_op_days(p))
-    return lost * days / days.sum()
+    lost = 365.0 / _col(p, "relocation_interval_days") * _col(p, "relocation_downtime_days")
+    days = _days(p)
+    return lost * days / days.sum(axis=-1, keepdims=True)
 
 
 def cycle_ceiling_batches_per_day(p: dict, shifts: float | None = None) -> float:
@@ -90,39 +107,57 @@ def kiln_fill_ratio(p: dict, dry_biomass_per_batch_t: float | None = None) -> fl
     return char_m3 / p["kiln_volume_m3"]
 
 
+# --------------------------------------------------------------------------- core (vectorised)
+def bridge_arrays(p: dict, *, pass_rate=None, op_days_scale: float = 1.0,
+                  kiln_add: tuple[float, int] | None = None) -> dict[str, np.ndarray]:
+    """Monthly bridge as arrays of shape (..., 12). Works for scalar or array-valued parameters."""
+    pr = dmrv_pass_rate(p) if pass_rate is None else np.asarray(pass_rate, dtype=float)
+    pr = np.asarray(pr)[..., None]
+    days = _days(p) * op_days_scale
+    kilns = _col(p, "kilns_total") * ramp_shares(p)
+    if kiln_add is not None:
+        extra, from_month = kiln_add
+        kilns = kilns + extra * (np.arange(1, 13) >= from_month)
+    kiln_days = kilns * np.maximum(days - relocation_loss_days(p), 0) * _col(p, "biomass_availability_factor")
+    batches = kiln_days * _col(p, "batches_per_kiln_day")
+    dry = batches * _col(p, "dry_biomass_per_batch_t")
+    char = dry * _col(p, "biochar_yield_dry_frac")
+    gross = char * gross_t_per_t_biochar(p)[..., None]
+    rejected = gross * (1 - pr)
+    proj = char * pr * project_em_t_per_t_biochar(p)[..., None]
+    pre_buffer = gross - rejected - proj
+    buffer = pre_buffer * _col(p, "buffer_deduction_frac")
+    net = pre_buffer - buffer
+    return {"kilns_online": np.broadcast_to(kilns, net.shape), "op_days": np.broadcast_to(days, net.shape),
+            "kiln_days": kiln_days, "batches": batches, "dry_feed_t": dry, "biochar_t": char,
+            "gross_tco2e": gross, "rejected_tco2e": rejected, "project_emissions_tco2e": proj,
+            "buffer_tco2e": buffer, "net_tco2e": net, "pass_rate": np.broadcast_to(pr, net.shape)}
+
+
+@lru_cache(maxsize=1)
+def plan_phasing() -> np.ndarray:
+    """Monthly plan (sums to the target): the plan-implied scenario's monthly shape scaled to target."""
+    net = bridge_arrays(scenario_params("plan_implied"))["net_tco2e"]
+    return meta()["target_net_tco2e"] * net / net.sum()
+
+
 # --------------------------------------------------------------------------- bridge
 def monthly_bridge(p: dict | None = None, *, pass_rate: float | None = None,
-                   op_days_scale: float = 1.0) -> pd.DataFrame:
+                   op_days_scale: float = 1.0, kiln_add: tuple[float, int] | None = None) -> pd.DataFrame:
     """Deterministic monthly tonne bridge. Returns one row per month plus cumulative columns."""
     p = p or defaults()
-    pr = dmrv_pass_rate(p) if pass_rate is None else pass_rate
-    days = np.array(monthly_op_days(p)) * op_days_scale
-    kilns = p["kilns_total"] * ramp_shares(p)
-    kiln_days = kilns * np.maximum(days - relocation_loss_days(p), 0)
-    batches = kiln_days * p["batches_per_kiln_day"]
-    dry = batches * p["dry_biomass_per_batch_t"]
-    char = dry * p["biochar_yield_dry_frac"]
-    gross = char * gross_t_per_t_biochar(p)
-    rejected = gross * (1 - pr)
-    proj = char * pr * project_em_t_per_t_biochar(p)
-    pre_buffer = gross - rejected - proj
-    buffer = pre_buffer * p["buffer_deduction_frac"]
-    net = pre_buffer - buffer
-    target = meta()["target_net_tco2e"]
-    df = pd.DataFrame({
-        "month": [m.capitalize() for m in MONTHS],
-        "kilns_online": kilns, "op_days": days, "kiln_days": kiln_days, "batches": batches,
-        "dry_feed_t": dry, "biochar_t": char, "gross_tco2e": gross, "rejected_tco2e": rejected,
-        "project_emissions_tco2e": proj, "buffer_tco2e": buffer, "net_tco2e": net,
-    })
+    arr = bridge_arrays(p, pass_rate=pass_rate, op_days_scale=op_days_scale, kiln_add=kiln_add)
+    df = pd.DataFrame({"month": [m.capitalize() for m in MONTHS],
+                       **{k: np.asarray(v, dtype=float) for k, v in arr.items() if k != "pass_rate"}})
     df["cum_net_tco2e"] = df["net_tco2e"].cumsum()
-    # Plan phasing: target spread in proportion to operating days at full fleet (a flat-capacity plan).
-    df["plan_cum_tco2e"] = target * np.cumsum(days) / days.sum()
+    df["plan_tco2e"] = plan_phasing()
+    df["plan_cum_tco2e"] = df["plan_tco2e"].cumsum()
     return df
 
 
 def annual_net(p: dict | None = None, **kw) -> float:
-    return float(monthly_bridge(p, **kw)["net_tco2e"].sum())
+    p = p or defaults()
+    return float(bridge_arrays(p, **kw)["net_tco2e"].sum())
 
 
 # --------------------------------------------------------------------------- solver
@@ -306,22 +341,34 @@ def greedy_stack(p: dict | None = None, target: float | None = None) -> pd.DataF
 
 
 # --------------------------------------------------------------------------- sensitivity
-def oat_sensitivity(p: dict | None = None) -> pd.DataFrame:
-    """One-at-a-time swing in annual net tonnes as each parameter moves low → high
-    (others at default). Monthly operating days are also swung together as one 'calendar' row.
-    Parameters with no effect on tonnes (economics, people, supply) drop out."""
+TONNE_GROUPS = ("network", "kiln_physics", "calendar", "carbon_accounting", "dmrv")
+
+
+def _bounds_for(name: str, ranges: dict | None) -> tuple[float, float]:
+    prm = load_params()[name]
+    if ranges and name in ranges:
+        return ranges[name][0], ranges[name][-1]
+    return prm.low, prm.high
+
+
+def oat_sensitivity(p: dict | None = None, ranges: dict | None = None) -> pd.DataFrame:
+    """One-at-a-time (tornado) swing in annual net tonnes as each parameter moves low → high,
+    others held at `p`. `ranges` (scenario mc_ranges) override yaml bounds. Monthly operating days and
+    all dMRV inputs are also swung together as grouped rows. Parameters with no effect drop out."""
     p = p or defaults()
     params = load_params()
     base = annual_net(p)
     rows = []
     for name, prm in params.items():
-        if prm.low == prm.high or name.startswith("op_days_"):
+        if prm.group not in TONNE_GROUPS or name.startswith("op_days_"):
             continue
-        lo_net = annual_net({**p, name: prm.low})
-        hi_net = annual_net({**p, name: prm.high})
+        lo, hi = _bounds_for(name, ranges)
+        if lo == hi:
+            continue
+        lo_net, hi_net = annual_net({**p, name: lo}), annual_net({**p, name: hi})
         if abs(hi_net - lo_net) < 1e-6:
             continue
-        rows.append({"parameter": name, "status": prm.status, "low": prm.low, "high": prm.high,
+        rows.append({"parameter": name, "status": prm.status, "low": lo, "high": hi,
                      "net_at_low": lo_net, "net_at_high": hi_net, "swing": abs(hi_net - lo_net)})
     cal_lo = {**p, **{f"op_days_{m}": params[f"op_days_{m}"].low for m in MONTHS}}
     cal_hi = {**p, **{f"op_days_{m}": params[f"op_days_{m}"].high for m in MONTHS}}
@@ -332,10 +379,155 @@ def oat_sensitivity(p: dict | None = None) -> pd.DataFrame:
                  "net_at_low": lo_net, "net_at_high": hi_net, "swing": abs(hi_net - lo_net)})
     lo_net, hi_net = annual_net(_dmrv_at(p, "bad")), annual_net(_dmrv_at(p, "good"))
     rows.append({"parameter": "dmrv_pass_rate (all dMRV inputs)", "status": "ASSUMPTION – VERIFY",
-                 "low": dmrv_pass_rate(_dmrv_at(p, "bad")), "high": dmrv_pass_rate(_dmrv_at(p, "good")),
+                 "low": float(dmrv_pass_rate(_dmrv_at(p, "bad"))), "high": float(dmrv_pass_rate(_dmrv_at(p, "good"))),
                  "net_at_low": lo_net, "net_at_high": hi_net, "swing": abs(hi_net - lo_net)})
     df = pd.DataFrame(rows).sort_values("swing", ascending=False).reset_index(drop=True)
     df.attrs["base_net"] = base
+    return df
+
+
+def tornado(scenario: str = "plan_implied") -> pd.DataFrame:
+    """Scenario-centred tornado using the scenario's Monte Carlo ranges where defined."""
+    return oat_sensitivity(scenario_params(scenario), scenario_mc_ranges(scenario))
+
+
+# --------------------------------------------------------------------------- scenarios & Monte Carlo
+def scenario_summary() -> pd.DataFrame:
+    """Deterministic annual net and key drivers for every scenario in assumptions.yaml."""
+    rows = []
+    for key, spec in scenarios().items():
+        p = scenario_params(key)
+        rows.append({"scenario": key, "label": spec["label"], "description": spec["description"],
+                     "net_tco2e": annual_net(p), "pass_rate": float(dmrv_pass_rate(p)),
+                     "overrides": ", ".join(f"{k}={v:g}" for k, v in (spec.get("overrides") or {}).items())})
+    return pd.DataFrame(rows)
+
+
+def sample_params(scenario: str, n: int, seed: int) -> dict[str, np.ndarray | float]:
+    """Triangular draws for every tonne-relevant parameter: (low, mode, high) from assumptions.yaml with
+    the mode at the scenario value, or from the scenario's mc_ranges where given. Independent draws."""
+    rng = np.random.default_rng(seed)
+    base = scenario_params(scenario)
+    ranges = scenario_mc_ranges(scenario)
+    out: dict = dict(base)
+    for name, prm in load_params().items():
+        if prm.group not in TONNE_GROUPS:
+            continue
+        if name in ranges:
+            lo, mode, hi = ranges[name]
+        else:
+            lo, hi = prm.low, prm.high
+            mode = min(max(base[name], lo), hi)
+        if hi <= lo:
+            continue
+        out[name] = rng.triangular(lo, mode, hi, size=n)
+    return out
+
+
+def monte_carlo(scenario: str = "plan_implied", n: int | None = None, seed: int | None = None) -> dict:
+    """Annual and cumulative-monthly net tonne distribution for a scenario."""
+    n = n or int(meta()["mc_runs"])
+    seed = meta()["random_seed"] if seed is None else seed
+    draws = sample_params(scenario, n, seed)
+    arr = bridge_arrays(draws)
+    monthly = arr["net_tco2e"]
+    annual = monthly.sum(axis=-1)
+    cum = np.cumsum(monthly, axis=-1)
+    target = meta()["target_net_tco2e"]
+    return {
+        "scenario": scenario, "n": n, "annual": annual,
+        "p10": float(np.percentile(annual, 10)), "p50": float(np.percentile(annual, 50)),
+        "p90": float(np.percentile(annual, 90)), "mean": float(annual.mean()),
+        "prob_hit": float((annual >= target).mean()),
+        "cum_p10": np.percentile(cum, 10, axis=0), "cum_p50": np.percentile(cum, 50, axis=0),
+        "cum_p90": np.percentile(cum, 90, axis=0),
+    }
+
+
+def p50_drift_decomposition(scenario: str = "plan_implied") -> pd.DataFrame:
+    """Why the Monte Carlo P50 sits below the deterministic design point: for each sampled parameter,
+    the % change in annual net when it moves from its mode (scenario value) to the mean of its
+    triangular distribution. Negative = the nominal value is optimistic relative to its range."""
+    p = scenario_params(scenario)
+    ranges = scenario_mc_ranges(scenario)
+    base = annual_net(p)
+    rows = []
+    for name, prm in load_params().items():
+        if prm.group not in TONNE_GROUPS:
+            continue
+        lo, mode, hi = ranges.get(name, (prm.low, min(max(p[name], prm.low), prm.high), prm.high))
+        if hi <= lo:
+            continue
+        mean = (lo + mode + hi) / 3
+        rows.append({"parameter": name, "status": prm.status, "mode": mode, "mean": mean,
+                     "pct_change": (annual_net({**p, name: mean}) / base - 1) * 100})
+    df = pd.DataFrame(rows).sort_values("pct_change").reset_index(drop=True)
+    df.attrs["base_net"] = base
+    return df
+
+
+# --------------------------------------------------------------------------- lever simulator
+def _lever_specs(p: dict) -> list[dict]:
+    """Each lever: label, how it changes the run, and its fixed ₹ cost on top of the cost-model delta."""
+    sites = p["kilns_total"] / p["kilns_per_site"]
+    pr0 = float(dmrv_pass_rate(p))
+    non_monsoon = [m for m in MONTHS if m not in ("jun", "jul", "aug", "sep")]
+    cal_cap = dict(zip(MONTHS, CAL_DAYS_2027))
+    ramp_new = max(1.0, p["ramp_full_month"] - p["lever_ramp_months_saved"])
+    bpd_new = p["batches_per_kiln_day"] * (1 + p["lever_second_shift_share"] * p["lever_second_shift_uplift"])
+    ch4_new = min(p["ch4_ef_g_per_kg_biochar"], p["ch4_ef_dry_g_per_kg"])
+    return [
+        {"lever": f"dMRV QA desk (+{p['lever_dmrv_step_pp']:.0f} pp pass rate)",
+         "kw": {"pass_rate": min(pr0 + p["lever_dmrv_step_pp"] / 100, 0.99)}, "params": {},
+         "fixed_inr": p["lever_dmrv_cost_inr"], "owner": "MRV lead"},
+        {"lever": f"Add {p['lever_kilns_added']:.0f} kilns from month {p['lever_kilns_from_month']:.0f}",
+         "kw": {"kiln_add": (p["lever_kilns_added"], int(p["lever_kilns_from_month"]))}, "params": {},
+         "fixed_inr": 0.0, "owner": "Head of field ops"},
+        {"lever": f"+{p['lever_extra_op_days_per_month']:.0f} operating days/month outside monsoon",
+         "kw": {}, "params": {f"op_days_{m}": min(p[f"op_days_{m}"] + p["lever_extra_op_days_per_month"], cal_cap[m] - 4)
+                              for m in non_monsoon},
+         "fixed_inr": p["lever_op_days_cost_inr_per_site"] * sites, "owner": "Site supervisors"},
+        {"lever": "Dry feedstock to ≤15% moisture",
+         "kw": {}, "params": {"ch4_ef_g_per_kg_biochar": ch4_new,
+                              "biomass_moisture_frac": min(p["biomass_moisture_frac"], p["moisture_dry_threshold"] - 0.02)},
+         "fixed_inr": p["lever_drying_cost_inr_per_site"] * sites, "per_t_dry_inr": p["lever_drying_cost_inr_per_t_dry"],
+         "owner": "Site supervisors / QA"},
+        {"lever": f"Second shift on {p['lever_second_shift_share']:.0%} of kilns",
+         "kw": {}, "params": {"batches_per_kiln_day": bpd_new},
+         "fixed_inr": p["lever_second_shift_fixed_inr_per_kiln"] * p["lever_second_shift_share"] * p["kilns_total"],
+         "owner": "Head of field ops"},
+        {"lever": f"Operator academy: full fleet {p['lever_ramp_months_saved']:.0f} months earlier",
+         "kw": {}, "params": {"ramp_full_month": ramp_new},
+         "fixed_inr": p["lever_ramp_cost_inr"], "owner": "People / training lead"},
+    ]
+
+
+def lever_simulator(p: dict | None = None, target: float | None = None) -> pd.DataFrame:
+    """Incremental net tonnes and incremental ₹ cost of each lever vs `p`; ranked by ₹ per incremental tonne.
+    ₹ delta = change in the full cost model (variable costs of extra batches, capex, community payments,
+    registry fees) + the lever's own fixed cost."""
+    from model.economics import total_cost_inr  # local import to avoid a cycle
+
+    p = p or scenario_params("plan_implied")
+    target = target or meta()["target_net_tco2e"]
+    base_net = annual_net(p)
+    base_cost = total_cost_inr(p)
+    gap = max(target - base_net, 0.0)
+    rows = []
+    for spec in _lever_specs(p):
+        q = {**p, **spec["params"]}
+        net = annual_net(q, **spec["kw"])
+        cost = total_cost_inr(q, **spec["kw"]) + spec["fixed_inr"]
+        if "per_t_dry_inr" in spec:
+            cost += spec["per_t_dry_inr"] * float(bridge_arrays(q, **spec["kw"])["dry_feed_t"].sum())
+        d_net, d_cost = net - base_net, cost - base_cost
+        rows.append({"lever": spec["lever"], "owner": spec["owner"], "delta_net_t": d_net, "delta_cost_inr": d_cost,
+                     "inr_per_incremental_t": d_cost / d_net if d_net > 1 else np.nan,
+                     "gap_closed_pct": (d_net / gap * 100) if gap > 0 else np.nan})
+    df = pd.DataFrame(rows)
+    df["no_effect"] = df["delta_net_t"] <= 1
+    df = df.sort_values(["no_effect", "inr_per_incremental_t"]).reset_index(drop=True)
+    df.attrs.update(base_net=base_net, gap=gap, target=target)
     return df
 
 

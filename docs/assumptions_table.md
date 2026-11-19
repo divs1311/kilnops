@@ -4,7 +4,7 @@
 
 Auto-generated from `assumptions.yaml` by `tools/build_assumptions_table.py`. Do not edit by hand.
 
-**89 parameters**: 🟢 PUBLIC 5, 🔵 LITERATURE 9, 🟠 ASSUMPTION – VERIFY 75
+**218 parameters**: 🟢 PUBLIC 5, 🔵 LITERATURE 15, 🟠 ASSUMPTION – VERIFY 198
 
 
 ## Network
@@ -135,5 +135,169 @@ Auto-generated from `assumptions.yaml` by `tools/build_assumptions_table.py`. Do
 | production_to_issuance_months | 3 | 2 | 6 | months | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 | issuance_to_cash_months | 1 | 0 | 3 | months | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 | payment_sla_days | 14 | 7 | 30 | days (target village payment lag) | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+
+## Network
+
+| Parameter | Default | Low | High | Unit | Status | Source | Note |
+|---|---:|---:|---:|---|---|---|---|
+| biomass_availability_factor | 1 | 0.7 | 1 | share of planned kiln-days with feedstock on hand | 🟠 ASSUMPTION – VERIFY | Analyst estimate | 1.0 = no stockouts. Used in the biomass-shock scenario. |
+
+## Carbon Accounting
+
+| Parameter | Default | Low | High | Unit | Status | Source | Note |
+|---|---:|---:|---:|---|---|---|---|
+| ch4_ef_dry_g_per_kg | 5 | 2 | 8 | g CH4/kg biochar at moisture ≤ dry threshold | 🔵 LITERATURE | Lotz & Schmidt 2026, 'Methane Emission from Artisanal Biochar Production – A White Paper', the Biochar Journal, pp 86-110 | Lotz & Schmidt 2026: <5 g/kg at ≤15% moisture. |
+| ch4_ef_wet_g_per_kg | 30 | 20 | 50 | g CH4/kg biochar at moisture ≥ wet threshold | 🔵 LITERATURE | Lotz & Schmidt 2026 (up to 10x at ≥25% moisture); Schmidt 2016 mean 30 |  |
+| moisture_dry_threshold | 0.15 | 0.12 | 0.18 | fraction | 🔵 LITERATURE | Lotz & Schmidt 2026, 'Methane Emission from Artisanal Biochar Production – A White Paper', the Biochar Journal, pp 86-110 |  |
+| moisture_wet_threshold | 0.25 | 0.22 | 0.3 | fraction | 🔵 LITERATURE | Lotz & Schmidt 2026, 'Methane Emission from Artisanal Biochar Production – A White Paper', the Biochar Journal, pp 86-110 |  |
+
+## Synthetic Data
+
+| Parameter | Default | Low | High | Unit | Status | Source | Note |
+|---|---:|---:|---:|---|---|---|---|
+| arch_strong_sites | 8 | 8 | 8 | sites | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_average_sites | 12 | 12 | 12 | sites | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_biomass_sites | 5 | 5 | 5 | sites | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_mrvweak_sites | 5 | 5 | 5 | sites | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_strong_supply_ratio | 1.35 | 1.2 | 1.5 | supply capacity ÷ full demand | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_average_supply_ratio | 1.15 | 1 | 1.3 | supply capacity ÷ full demand | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_biomass_supply_ratio | 0.72 | 0.6 | 0.85 | supply capacity ÷ full demand | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_mrvweak_supply_ratio | 1.15 | 1 | 1.3 | supply capacity ÷ full demand | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_strong_evidence_fail_mult | 0.6 | 0.4 | 0.8 | × per-element failure probability | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_average_evidence_fail_mult | 1 | 1 | 1 | × per-element failure probability | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_biomass_evidence_fail_mult | 1 | 0.8 | 1.2 | × per-element failure probability | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_mrvweak_evidence_fail_mult | 2.6 | 2 | 3.5 | × per-element failure probability | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_strong_productivity | 1 | 0.95 | 1.05 | × batches per kiln-day | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_average_productivity | 0.94 | 0.9 | 1 | × batches per kiln-day | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_biomass_productivity | 0.92 | 0.85 | 1 | × batches per kiln-day | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_mrvweak_productivity | 0.9 | 0.85 | 1 | × batches per kiln-day | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_strong_moisture | 0.12 | 0.1 | 0.14 | mean feedstock moisture | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_average_moisture | 0.14 | 0.12 | 0.16 | mean feedstock moisture | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_biomass_moisture | 0.17 | 0.14 | 0.2 | mean feedstock moisture | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_mrvweak_moisture | 0.15 | 0.12 | 0.18 | mean feedstock moisture | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_strong_return_completion | 0.95 | 0.9 | 1 | share of biochar returned | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_average_return_completion | 0.86 | 0.8 | 0.92 | share of biochar returned | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_biomass_return_completion | 0.78 | 0.7 | 0.85 | share of biochar returned | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| arch_mrvweak_return_completion | 0.8 | 0.7 | 0.9 | share of biochar returned | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| late_payer_start_day | 60 | 45 | 120 | day of 2027 when payments start running late | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| late_payer_lag_days | 48 | 30 | 60 | days mean payment lag once late | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| late_payer_end_day | 200 | 160 | 240 | day of 2027 when the payment backlog is cleared | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| normal_payment_lag_days | 9 | 5 | 14 | days mean payment lag | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| trust_window_start_days | 42 | 35 | 49 | days before today (window start) | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice | Villages react to payment lag on deliveries made 4-6 weeks earlier. |
+| trust_window_end_days | 28 | 21 | 35 | days before today (window end) | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| trust_sensitivity | 0.55 | 0.3 | 1 | supply drop per SLA-multiple of excess lag | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| trust_floor | 0.4 | 0.3 | 0.6 | minimum supply willingness | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| trust_recovery_per_day | 0.006 | 0.003 | 0.02 | willingness regained per day once paid on time | 🟠 ASSUMPTION – VERIFY | Synthetic-data design choice |  |
+| supply_index_jan | 1.1 | 0.9 | 1.3 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate | Cotton / pigeon-pea stalk clearing. |
+| supply_index_feb | 1.05 | 0.9 | 1.2 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| supply_index_mar | 1.2 | 1 | 1.4 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| supply_index_apr | 1.3 | 1.1 | 1.5 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate | Rabi peak. |
+| supply_index_may | 1.05 | 0.8 | 1.2 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| supply_index_jun | 0.5 | 0.3 | 0.7 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| supply_index_jul | 0.2 | 0.1 | 0.4 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| supply_index_aug | 0.2 | 0.1 | 0.4 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| supply_index_sep | 0.5 | 0.3 | 0.8 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| supply_index_oct | 1.3 | 1.1 | 1.5 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate | Kharif peak. |
+| supply_index_nov | 1.3 | 1.1 | 1.5 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| supply_index_dec | 1.2 | 1 | 1.4 | index | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| dry_batch_cv | 0.1 | 0.05 | 0.2 | coefficient of variation | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| yield_sd | 0.03 | 0.02 | 0.05 | absolute SD of yield | 🟠 ASSUMPTION – VERIFY | Schmidt et al. 2016 (±5% across feedstocks; within-feedstock assumed narrower) |  |
+| peak_temp_mean_c | 700 | 650 | 750 | °C | 🔵 LITERATURE | Schmidt et al. 2016 (680-750 °C main zone) |  |
+| peak_temp_sd_c | 35 | 20 | 60 | °C | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| new_operator_temp_penalty_c | 45 | 20 | 80 | °C lower peak temp in first month | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| operator_vacancy_days | 6 | 2 | 14 | days to backfill a leaver | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| biochar_return_interval_days | 14 | 7 | 30 | days between return runs | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| operator_pay_interval_days | 7 | 7 | 14 | days | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| villages_per_location | 11 | 6 | 20 | villages within radius per site location | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+
+## Levers
+
+| Parameter | Default | Low | High | Unit | Status | Source | Note |
+|---|---:|---:|---:|---|---|---|---|
+| lever_dmrv_step_pp | 5 | 2 | 8 | pp pass-rate gain | 🟠 ASSUMPTION – VERIFY | Analyst estimate | QA review desk, thermocouple upgrade, evidence refresher training. |
+| lever_dmrv_cost_inr | 6,000,000 | 3,000,000 | 12,000,000 | ₹ / year | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| lever_kilns_added | 45 | 15 | 90 | kilns (3 sites) | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| lever_kilns_from_month | 4 | 3 | 7 | month index online | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| lever_extra_op_days_per_month | 2 | 1 | 3 | extra days in non-monsoon months | 🟠 ASSUMPTION – VERIFY | Analyst estimate | Covered feedstock storage + relief crews. |
+| lever_op_days_cost_inr_per_site | 150,000 | 80,000 | 300,000 | ₹ / site / year fixed | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| lever_drying_cost_inr_per_site | 100,000 | 50,000 | 200,000 | ₹ / site (drying yard | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| lever_drying_cost_inr_per_t_dry | 150 | 80 | 300 | ₹ / t dry handled | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| lever_second_shift_share | 0.25 | 0.1 | 0.5 | share of kilns on 2 shifts | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| lever_second_shift_uplift | 0.6 | 0.4 | 0.9 | extra batches/day ÷ single-shift batches/day | 🟠 ASSUMPTION – VERIFY | Analyst estimate | Below 1.0: night burns are slower and some days lack feedstock. |
+| lever_second_shift_fixed_inr_per_kiln | 60,000 | 30,000 | 120,000 | ₹ / kiln / year (lighting | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| lever_ramp_months_saved | 2 | 1 | 3 | months earlier to full fleet | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| lever_ramp_cost_inr | 4,000,000 | 2,000,000 | 8,000,000 | ₹ (pre-hiring | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+
+## Economics
+
+| Parameter | Default | Low | High | Unit | Status | Source | Note |
+|---|---:|---:|---:|---|---|---|---|
+| dmrv_device_life_years | 2 | 1 | 3 | years | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| site_asset_life_years | 3 | 2 | 5 | years | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+
+## Kpi Thresholds
+
+| Parameter | Default | Low | High | Unit | Status | Source | Note |
+|---|---:|---:|---:|---|---|---|---|
+| kpi_utilisation_green | 0.85 | 0.8 | 0.9 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_utilisation_amber | 0.7 | 0.6 | 0.8 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_acceptance_green | 0.9 | 0.88 | 0.95 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_acceptance_amber | 0.82 | 0.75 | 0.88 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_evidence_green | 0.9 | 0.88 | 0.95 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_evidence_amber | 0.8 | 0.75 | 0.88 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_cover_green | 5 | 4 | 7 | days | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_cover_amber | 2 | 1 | 3 | days | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_payment_sla_green | 0.9 | 0.85 | 0.95 | share paid within SLA | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_payment_sla_amber | 0.75 | 0.6 | 0.85 | share paid within SLA | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_return_green | 0.9 | 0.85 | 0.95 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_return_amber | 0.75 | 0.6 | 0.85 | share | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_vs_plan_green | 0.95 | 0.9 | 1 | actual ÷ plan | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_vs_plan_amber | 0.85 | 0.75 | 0.9 | actual ÷ plan | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_attrition_green | 0.04 | 0.03 | 0.05 | monthly share (≤ green) | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| kpi_attrition_amber | 0.06 | 0.05 | 0.08 | monthly share (≤ amber) | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+
+## Pathway
+
+| Parameter | Default | Low | High | Unit | Status | Source | Note |
+|---|---:|---:|---:|---|---|---|---|
+| pw_cost_usd_low_distributed | 50 | 50 | 50 | USD/t | 🟠 ASSUMPTION – VERIFY | Analyst range; cross-check with this model's ₹/t |  |
+| pw_cost_usd_high_distributed | 120 | 120 | 120 | USD/t | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_cost_usd_low_industrial | 90 | 90 | 90 | USD/t | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_cost_usd_high_industrial | 180 | 180 | 180 | USD/t | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_cost_usd_low_regenag | 15 | 15 | 15 | USD/t | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_cost_usd_high_regenag | 45 | 45 | 45 | USD/t | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_cost_usd_low_erw | 120 | 120 | 120 | USD/t | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_cost_usd_high_erw | 300 | 300 | 300 | USD/t | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_permanence_distributed | 4 | 3 | 4 | score | 🔵 LITERATURE | Persistence factor 0.65-0.89 (IPCC 2019) |  |
+| pw_permanence_industrial | 4 | 4 | 5 | score | 🟠 ASSUMPTION – VERIFY | Controlled high-temperature pyrolysis |  |
+| pw_permanence_regenag | 2 | 1 | 2 | score | 🟠 ASSUMPTION – VERIFY | Soil carbon is reversible |  |
+| pw_permanence_erw | 5 | 4 | 5 | score | 🟠 ASSUMPTION – VERIFY | Geologic carbonate / bicarbonate storage |  |
+| pw_time_to_cash_distributed | 5 | 4 | 5 | score | 🟠 ASSUMPTION – VERIFY | Per-batch dMRV, months from burn to issuance |  |
+| pw_time_to_cash_industrial | 3 | 2 | 3 | score | 🟠 ASSUMPTION – VERIFY | Plant build 12-24 months first |  |
+| pw_time_to_cash_regenag | 2 | 1 | 2 | score | 🟠 ASSUMPTION – VERIFY | Multi-year sampling / modelling cycles |  |
+| pw_time_to_cash_erw | 1 | 1 | 2 | score | 🟠 ASSUMPTION – VERIFY | Slow weathering, measurement lag |  |
+| pw_delivery_risk_distributed | 3 | 2 | 3 | score (5 = low risk) | 🟠 ASSUMPTION – VERIFY | Biomass, labour, evidence across many sites |  |
+| pw_delivery_risk_industrial | 3 | 2 | 4 | score (5 = low risk) | 🟠 ASSUMPTION – VERIFY | Commissioning, uptime, feedstock contracts |  |
+| pw_delivery_risk_regenag | 3 | 2 | 3 | score (5 = low risk) | 🟠 ASSUMPTION – VERIFY | Practice adoption, reversal |  |
+| pw_delivery_risk_erw | 2 | 1 | 3 | score (5 = low risk) | 🟠 ASSUMPTION – VERIFY | Measurement uncertainty, rock logistics |  |
+| pw_mrv_simplicity_distributed | 2 | 2 | 3 | score (5 = simplest) | 🟠 ASSUMPTION – VERIFY | dMRV on every batch, 450 units |  |
+| pw_mrv_simplicity_industrial | 4 | 4 | 5 | score (5 = simplest) | 🟠 ASSUMPTION – VERIFY | Metered, few units |  |
+| pw_mrv_simplicity_regenag | 2 | 1 | 2 | score (5 = simplest) | 🟠 ASSUMPTION – VERIFY | Soil sampling + models |  |
+| pw_mrv_simplicity_erw | 1 | 1 | 2 | score (5 = simplest) | 🟠 ASSUMPTION – VERIFY | Field geochemistry |  |
+| pw_cobenefits_distributed | 5 | 4 | 5 | score | 🟠 ASSUMPTION – VERIFY | Avoided residue burning, farmer income, biochar returned free |  |
+| pw_cobenefits_industrial | 3 | 3 | 4 | score | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_cobenefits_regenag | 4 | 4 | 5 | score | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_cobenefits_erw | 3 | 3 | 4 | score | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_scalability_distributed | 3 | 2 | 4 | score | 🟠 ASSUMPTION – VERIFY | Labour, biomass logistics, supervision span |  |
+| pw_scalability_industrial | 3 | 2 | 4 | score | 🟠 ASSUMPTION – VERIFY | Capex, permitting |  |
+| pw_scalability_regenag | 5 | 4 | 5 | score | 🟠 ASSUMPTION – VERIFY | Acreage-driven |  |
+| pw_scalability_erw | 4 | 3 | 4 | score | 🟠 ASSUMPTION – VERIFY | Rock supply, spreading logistics |  |
+| pw_weight_cost | 0.25 | 0 | 1 | weight | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_weight_permanence | 0.2 | 0 | 1 | weight | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_weight_time_to_cash | 0.15 | 0 | 1 | weight | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_weight_delivery_risk | 0.15 | 0 | 1 | weight | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_weight_mrv_simplicity | 0.1 | 0 | 1 | weight | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_weight_cobenefits | 0.1 | 0 | 1 | weight | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
+| pw_weight_scalability | 0.05 | 0 | 1 | weight | 🟠 ASSUMPTION – VERIFY | Analyst estimate |  |
 
 ⚙️ = solver lever in the "what has to be true" analysis.
